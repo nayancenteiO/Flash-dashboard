@@ -121,6 +121,8 @@ export function AiLensDashboard() {
       })));
 
       setLenses(formattedLenses);
+      console.log(formattedLenses);
+      
     } catch (error) {
       console.error('Error fetching lens data:', error);
       toast({
