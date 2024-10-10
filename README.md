@@ -1,2 +1,2 @@
-# Flash-dashboard
+# flash-ai
 Flash ai photo generation

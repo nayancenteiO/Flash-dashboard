@@ -1,0 +1,211 @@
+.custom-flex {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.custom-flex textarea {
+    flex-basis: 80%;
+    min-height: 40px;
+    height: 40px;
+}
+.fixed_position {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    padding: 20px 32px;
+    z-index: 9;
+    background: #fff;
+}
+.fixed_position-01{
+    padding: 20px 32px;
+}
+.margin-top {
+    margin-top: 4rem;
+}
+.margin-top-10 {
+    margin-top: 4rem;
+}
+.scrolled .fixed_position, .scrolled .fixed_position-01 {
+    box-shadow: 0px 0px 0px 1px rgba(9, 9, 11, .07), 0px 4px 4px 0px rgba(9, 9, 11, .05);
+}
+.box-none {
+    box-shadow: none !important;
+}
+.z-index-999 {
+    z-index: 999;
+}
+textarea.max-width {
+    min-height: 36px;
+    height: 36px;
+}
+.latestes {
+    max-height: 400px;
+    min-height: 200px;
+}
+.width-60rem{
+    max-width: 60rem !important;
+}
+div[role="dialog"] {
+    outline: none !important;
+}
+span.d-block {
+    display: block;
+}
+.mobile-100 {
+    border-width: 1px;
+    border-color: hsl(var(--input));
+    padding: 7px 12px;
+    text-align: left !important;
+}
+.mobile-1000 {
+    padding: 7px 12px;
+    text-align: left !important;
+}
+.d-none {
+    display: none;
+}
+.margin-top-3{
+    margin-top: 3rem;
+}
+.margin-10{
+    margin-bottom: 10px;
+}
+.bols {
+    font-weight: 600;
+}
+.align-items-end {
+    align-items: flex-end;
+}
+.max-content {
+    width: max-content;
+}
+/* media */
+@media(max-width:767px){
+    .mobile-pad-less {
+        padding: 0;
+    }
+    .mobile-tread {
+        width: 100% !important;
+    }
+    .margin-top-10 {
+        margin-top: 5rem;
+    }
+    .mobile-flex-end {
+        flex-direction: column;
+    }
+    .custom-flex {
+        flex-direction: column;
+        row-gap: 15px;
+    }
+    .mb-01{
+        margin-bottom: 10px;
+    }
+    textarea.latest-bio {
+        width: 100% !important;
+    }
+    .mobile-de {
+        width: 150%;
+    }
+    .width-60rem {
+        max-width: 28rem !important;
+    }
+    
+    .mnobile-flex-dev {
+        padding: 16px 13px 16px 20px;
+        /* flex-direction: row;
+        flex-wrap: wrap; */
+    }
+
+    .mnobile-flex-dev h1 {
+        font-size: 16px;
+        flex-basis: 100%;
+        /* justify-content: center; */
+    }
+
+    .mobile-flex {
+        flex-wrap: nowrap;
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+
+    .mobile-flex button {
+        font-size: 13px;
+        width: 192px;
+        text-wrap: wrap;
+    }
+    .mobile_set {
+        flex-direction: row;
+        justify-content: center;
+        width: 100%;
+        margin-top: 10px;
+    }
+    .login-popup {
+        width: 90%;
+        border-radius: 8px;
+    }
+    .border-0ra{
+        border-radius: 8px;
+    }
+    .mobile-100, .mobile-1000{
+        width: 100% !important;
+    }
+    .mobile-1000{
+        width: 100% !important;
+        border-width: 1px;
+        border-color: hsl(var(--input));
+    }
+    .ml-mo{
+        margin-left: 10px;
+                width: 145px;
+    }
+    .mobile-flex-dowen {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        row-gap: 20px;
+    }
+    .custom-head h1 {
+        font-size: 20px;
+        line-height: 25px;
+    }
+}
+@media(max-width:650px){
+    .mobile-flex-image {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        row-gap: 8px;
+    }
+    .mobile-flex-dowen .flex.space-x-2 {
+        width: 100%;
+    }
+    
+    .mobile-flex-dowen .flex.items-center.space-x-2 {
+        display: flex;
+        justify-content: center;
+    }
+}
+@media(max-width:480px){
+    .custom-flex {
+        flex-direction: column;
+        row-gap: 15px;
+    }
+    textarea.latest-bio {
+        width: 100% !important;
+    }
+    .mobile-de {
+        width: 115%;
+    }
+}
+@media(max-width:380px){
+    .latest-chart-mat .rounded-xl {
+        width: 77%;
+    }
+    .latest-chart {width: 100%;}
+}
