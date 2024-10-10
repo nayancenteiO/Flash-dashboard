@@ -1,21 +1,27 @@
-'use client'
+import { useState, useEffect } from 'react';
 
-import { toast } from "@/components/ui/use-toast"
+type DecryptFunction = (encryptedData: string) => Promise<string>;
 
-// Utility function for decryption
 async function decryptField(encryptedData: string): Promise<string> {
-  // Check if we're in a browser environment
+  if (typeof window === 'undefined') {
+    return encryptedData;
+  }
 
   try {
     const { key, iv, encryptedData: encData } = JSON.parse(encryptedData);
 
-    // Convert hex strings to Uint8Array
     const keyBuffer = new Uint8Array(key.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
     const ivBuffer = new Uint8Array(iv.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
     const encryptedBuffer = new Uint8Array(encData.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
 
-    // Import the key
-    const importedKey = await window.crypto.subtle.importKey(
+    const crypto = window.crypto || (window as any).msCrypto;
+    
+    if (!crypto || !crypto.subtle) {
+      console.warn('Web Crypto API is not available. Returning encrypted data.');
+      return encryptedData;
+    }
+
+    const importedKey = await crypto.subtle.importKey(
       "raw",
       keyBuffer,
       { name: "AES-CBC" },
@@ -23,37 +29,28 @@ async function decryptField(encryptedData: string): Promise<string> {
       ["decrypt"]
     );
 
-    // Decrypt the data
-    const decryptedBuffer = await window.crypto.subtle.decrypt(
+    const decryptedBuffer = await crypto.subtle.decrypt(
       { name: "AES-CBC", iv: ivBuffer },
       importedKey,
       encryptedBuffer
     );
 
-    // Convert the decrypted buffer to a string
     const decoder = new TextDecoder();
     return decoder.decode(decryptedBuffer);
   } catch (error) {
     console.error("Decryption failed:", error);
-    toast({
-      title: "Decryption Error",
-      description: "Failed to decrypt data. Some information may be displayed in encrypted form.",
-      variant: "destructive",
-    });
-    return encryptedData; // Return the original encrypted data if decryption fails
+    return encryptedData;
   }
 }
 
-export async function safeDecrypt(value: any): Promise<any> {
-  if (typeof value === 'string' && value.startsWith('{')) {
-    try {
-      return await decryptField(value);
-    } catch (error) {
-      console.error('Error decrypting field:', error);
-      return value; // Return the original value if decryption fails
+export function useDecryption(): DecryptFunction {
+  const [decrypt, setDecrypt] = useState<DecryptFunction>(() => (data: string) => Promise.resolve(data));
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setDecrypt(() => decryptField);
     }
-  }
-  return value;
-}
+  }, []);
 
-export { decryptField };
+  return decrypt;
+}
