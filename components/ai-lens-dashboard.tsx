@@ -29,39 +29,7 @@ import { AproxTimeDialog } from './AproxTimeDialog'
 import EditNegativePromptModal from './EditNegativePromptModal'
 import { safeDecrypt } from './decryption-utils';
 // Utility function for decryption
-async function decryptField(encryptedData: string): Promise<string> {
-  try {
-    const { key, iv, encryptedData: encData } = JSON.parse(encryptedData);
 
-    // Convert hex strings to Uint8Array
-    const keyBuffer = new Uint8Array(key.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
-    const ivBuffer = new Uint8Array(iv.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
-    const encryptedBuffer = new Uint8Array(encData.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
-
-    // Import the key
-    const importedKey = await window.crypto.subtle.importKey(
-      "raw",
-      keyBuffer,
-      { name: "AES-CBC" },
-      false,
-      ["decrypt"]
-    );
-
-    // Decrypt the data
-    const decryptedBuffer = await window.crypto.subtle.decrypt(
-      { name: "AES-CBC", iv: ivBuffer },
-      importedKey,
-      encryptedBuffer
-    );
-
-    // Convert the decrypted buffer to a string
-    const decoder = new TextDecoder();
-    return decoder.decode(decryptedBuffer);
-  } catch (error) {
-    console.error("Decryption failed:", error);
-    return ""; // Return an empty string or handle the error as needed
-  }
-}
 
 type Lens = {
   id: number;
@@ -119,6 +87,10 @@ export function AiLensDashboard() {
       fetchLensData();
     }, []);
   
+    useEffect(() => {
+      fetchLensData();
+    }, []);
+  
     const fetchLensData = async () => {
       setIsLoading(true);
       try {
@@ -127,42 +99,33 @@ export function AiLensDashboard() {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
-
+  
         if (!result.data || !Array.isArray(result.data)) {
           console.error('API response is not in the expected format:', result);
           throw new Error('API response is not in the expected format');
         }
   
-        const formattedLenses: Lens[] = await Promise.all(result.data.map(async (item: any) => {
-          const decryptIfNeeded = async (value: any) => {
-            if (typeof value === 'string' && value.startsWith('{')) {
-              return await decryptField(value);
-            }
-            return value;
-          };
-  
-          return {
-            id: item._id || '',
-            lensId: item.lensId || '',
-            name: await safeDecrypt(item.lensName) || '',
-            display: item.display || false,
-            premiumLens: item.premiumLens || false,
-            creditconsumption: parseInt(await safeDecrypt(item.lensCredit)) || 0,
-            promptgenerationflow: await safeDecrypt(item.promptFlow) || '',
-            imageToTextModel: await safeDecrypt(item.model) || '',
-            maxTokens: parseInt(await safeDecrypt(item.maxTokens)) || 0,
-            textToImageModel: await safeDecrypt(item.imageModel) || '',
-            lastUpdate: new Date(item.updatedAt || Date.now()),
-            prompt: await safeDecrypt(item.prompt) || '',
-            stylePrompt: await safeDecrypt(item.stylePrompt) || '',
-            negativePrompt: await safeDecrypt(item.negativePrompt) || '',
-            Aproxtime: await safeDecrypt(item.approxTime) || '',
-            steps: parseInt(await safeDecrypt(item.civitaiSteps)) || 0,
-            cfgScale: parseFloat(await safeDecrypt(item.civitaiCFGScale)) || 0,
-            image: item.image || null,
-            usageCount: parseInt(await safeDecrypt(item.lensUses)) || 0
-          };
-        }));
+        const formattedLenses: Lens[] = await Promise.all(result.data.map(async (item: any) => ({
+          id: item._id || '',
+          lensId: item.lensId || '',
+          name: await safeDecrypt(item.lensName) || '',
+          display: item.display || false,
+          premiumLens: item.premiumLens || false,
+          creditconsumption: parseInt(await safeDecrypt(item.lensCredit)) || 0,
+          promptgenerationflow: await safeDecrypt(item.promptFlow) || '',
+          imageToTextModel: await safeDecrypt(item.model) || '',
+          maxTokens: parseInt(await safeDecrypt(item.maxTokens)) || 0,
+          textToImageModel: await safeDecrypt(item.imageModel) || '',
+          lastUpdate: new Date(item.updatedAt || Date.now()),
+          prompt: await safeDecrypt(item.prompt) || '',
+          stylePrompt: await safeDecrypt(item.stylePrompt) || '',
+          negativePrompt: await safeDecrypt(item.negativePrompt) || '',
+          Aproxtime: await safeDecrypt(item.approxTime) || '',
+          steps: parseInt(await safeDecrypt(item.civitaiSteps)) || 0,
+          cfgScale: parseFloat(await safeDecrypt(item.civitaiCFGScale)) || 0,
+          image: item.image || null,
+          usageCount: parseInt(await safeDecrypt(item.lensUses)) || 0
+        })));
   
         setLenses(formattedLenses);
         
