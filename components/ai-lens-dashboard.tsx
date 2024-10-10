@@ -144,7 +144,7 @@ export function AiLensDashboard() {
           return {
             id: item._id || '',
             lensId: item.lensId || '',
-            name: await decryptIfNeeded(item.lensName) || '',
+            name: await safeDecrypt(item.lensName) || '',
             display: item.display || false,
             premiumLens: item.premiumLens || false,
             creditconsumption: parseInt(await safeDecrypt(item.lensCredit)) || 0,

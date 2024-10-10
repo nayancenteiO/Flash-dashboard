@@ -1,14 +1,16 @@
+'use client'
+
 import { toast } from "@/components/ui/use-toast"
 
 // Utility function for decryption
 async function decryptField(encryptedData: string): Promise<string> {
-  try {
-    // Check if we're in a browser environment
-    if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
-      console.warn('Web Crypto API is not available. Returning encrypted data.');
-      return encryptedData;
-    }
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
+    console.warn('Web Crypto API is not available. Returning encrypted data.');
+    return encryptedData;
+  }
 
+  try {
     const { key, iv, encryptedData: encData } = JSON.parse(encryptedData);
 
     // Convert hex strings to Uint8Array
