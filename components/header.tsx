@@ -79,7 +79,7 @@ export default function Header({ isLoggedIn, email, handleLogout, handleLogin, s
                 )}
                 {currentPage !== 'image-gen' && (
                   <Button variant="outline" onClick={() => { openPage('/image-gen-analysis'); toggleMenu(); }}>
-                    <Image className="h-4 w-4 mr-2" />
+                    <Image className="h-4 w-4 mr-2"  />
                     Image Gen Analysis
                   </Button>
                 )}

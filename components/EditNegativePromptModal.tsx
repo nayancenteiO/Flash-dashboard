@@ -76,7 +76,7 @@ export default function EditNegativePromptModal({
     debugger;
     setDeletingKeywords(prev => new Set(prev).add(keywordId));
     try {
-      const response = await fetch(`https://dashboard.flashailens.com/api/dashboard/deleteNegativeReplaceKeywords/${lensId}/${keywordId}`, {
+      const response = await fetch(`https://dashboard.flashailens.com/api/dashboard/deleteNegativeReplaceKeywords/${keywordId}/${lensId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

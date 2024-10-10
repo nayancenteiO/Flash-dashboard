@@ -27,7 +27,7 @@ import { LensNameDialog } from './LensNameDialog'
 import { NumberFieldDialog } from './NumberFieldDialog'
 import { AproxTimeDialog } from './AproxTimeDialog'
 import EditNegativePromptModal from './EditNegativePromptModal'
-
+import { safeDecrypt } from './decryption-utils';
 // Utility function for decryption
 async function decryptField(encryptedData: string): Promise<string> {
   try {
@@ -147,20 +147,20 @@ export function AiLensDashboard() {
             name: await decryptIfNeeded(item.lensName) || '',
             display: item.display || false,
             premiumLens: item.premiumLens || false,
-            creditconsumption: parseInt(await decryptIfNeeded(item.lensCredit)) || 0,
-            promptgenerationflow: await decryptIfNeeded(item.promptFlow) || '',
-            imageToTextModel: await decryptIfNeeded(item.model) || '',
-            maxTokens: parseInt(await decryptIfNeeded(item.maxTokens)) || 0,
-            textToImageModel: await decryptIfNeeded(item.imageModel) || '',
+            creditconsumption: parseInt(await safeDecrypt(item.lensCredit)) || 0,
+            promptgenerationflow: await safeDecrypt(item.promptFlow) || '',
+            imageToTextModel: await safeDecrypt(item.model) || '',
+            maxTokens: parseInt(await safeDecrypt(item.maxTokens)) || 0,
+            textToImageModel: await safeDecrypt(item.imageModel) || '',
             lastUpdate: new Date(item.updatedAt || Date.now()),
-            prompt: await decryptIfNeeded(item.prompt) || '',
-            stylePrompt: await decryptIfNeeded(item.stylePrompt) || '',
-            negativePrompt: await decryptIfNeeded(item.negativePrompt) || '',
-            Aproxtime: await decryptIfNeeded(item.approxTime) || '',
-            steps: parseInt(await decryptIfNeeded(item.civitaiSteps)) || 0,
-            cfgScale: parseFloat(await decryptIfNeeded(item.civitaiCFGScale)) || 0,
+            prompt: await safeDecrypt(item.prompt) || '',
+            stylePrompt: await safeDecrypt(item.stylePrompt) || '',
+            negativePrompt: await safeDecrypt(item.negativePrompt) || '',
+            Aproxtime: await safeDecrypt(item.approxTime) || '',
+            steps: parseInt(await safeDecrypt(item.civitaiSteps)) || 0,
+            cfgScale: parseFloat(await safeDecrypt(item.civitaiCFGScale)) || 0,
             image: item.image || null,
-            usageCount: parseInt(await decryptIfNeeded(item.lensUses)) || 0
+            usageCount: parseInt(await safeDecrypt(item.lensUses)) || 0
           };
         }));
   
