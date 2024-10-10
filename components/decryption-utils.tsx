@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 type DecryptFunction = (encryptedData: string) => Promise<string>;
 
 async function decryptField(encryptedData: string): Promise<string> {
-  debugger;
+  
   if (typeof window === 'undefined') {
     return encryptedData;
   }
