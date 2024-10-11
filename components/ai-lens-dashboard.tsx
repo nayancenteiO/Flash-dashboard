@@ -30,39 +30,54 @@ import EditNegativePromptModal from './EditNegativePromptModal'
 // Utility function for decryption
 
 // Utility function for decryption
+async function decryptText(encrypted: { iv: string, key: string, encryptedData: string }): Promise<string> {
+  const algorithm = { name: 'AES-CBC' }; // Set to AES-CBC, as per your original decryption code
+
+  const iv = new Uint8Array(encrypted.iv.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))); // Convert hex IV to Uint8Array
+  const key = await crypto.subtle.importKey(
+    'raw', 
+    new Uint8Array(encrypted.key.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))), 
+    algorithm, 
+    false, 
+    ['decrypt']
+  );
+
+  const encryptedData = new Uint8Array(encrypted.encryptedData.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))); // Convert hex data to Uint8Array
+
+  try {
+    const decryptedData = await crypto.subtle.decrypt(
+      { name: 'AES-CBC', iv: iv }, // Ensure AES-CBC is used for decryption
+      key,
+      encryptedData
+    );
+    
+    return new TextDecoder().decode(decryptedData); // Decode decrypted ArrayBuffer to string
+  } catch (error) {
+    console.error('Decryption failed:', error);
+    throw error;
+  }
+}
+
+
 async function decryptField(encryptedData: string): Promise<string> {
   try {
-    const { key, iv, encryptedData: encData } = JSON.parse(encryptedData);
+    // Parse the encrypted data (assuming it's in JSON format)
+    const encrypted = JSON.parse(encryptedData);
 
-    // Convert hex strings to Uint8Array
-    const keyBuffer = new Uint8Array(key.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
-    const ivBuffer = new Uint8Array(iv.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
-    const encryptedBuffer = new Uint8Array(encData.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
+    // Use the new `decryptText` function
+    const decryptedText = await decryptText({
+      iv: encrypted.iv,
+      key: encrypted.key,
+      encryptedData: encrypted.encryptedData
+    });
 
-    // Import the key
-    const importedKey = await window.crypto.subtle.importKey(
-      "raw",
-      keyBuffer,
-      { name: "AES-CBC" },
-      false,
-      ["decrypt"]
-    );
-
-    // Decrypt the data
-    const decryptedBuffer = await window.crypto.subtle.decrypt(
-      { name: "AES-CBC", iv: ivBuffer },
-      importedKey,
-      encryptedBuffer
-    );
-
-    // Convert the decrypted buffer to a string
-    const decoder = new TextDecoder();
-    return decoder.decode(decryptedBuffer);
+    return decryptedText;
   } catch (error) {
     console.error("Decryption failed:", error);
     return ""; // Return an empty string or handle the error as needed
   }
 }
+
 
 type Lens = {
   id: number;
