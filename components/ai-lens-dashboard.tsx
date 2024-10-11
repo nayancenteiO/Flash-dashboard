@@ -33,7 +33,7 @@ import { useDecryption } from './decryption-utils';
 
 type Lens = {
   id: number;
-  lensId: string; // New field for the lens ID
+  lensId: string;
   name: string;
   display: boolean;
   premiumLens: boolean;
@@ -53,7 +53,40 @@ type Lens = {
   usageCount: number;
 }; 
 
+// Utility function for decryption
+async function decryptField(encryptedData: string): Promise<string> {
+  try {
+    const { key, iv, encryptedData: encData } = JSON.parse(encryptedData);
 
+    // Convert hex strings to Uint8Array
+    const keyBuffer = new Uint8Array(key.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
+    const ivBuffer = new Uint8Array(iv.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
+    const encryptedBuffer = new Uint8Array(encData.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
+
+    // Import the key
+    const importedKey = await window.crypto.subtle.importKey(
+      "raw",
+      keyBuffer,
+      { name: "AES-CBC" },
+      false,
+      ["decrypt"]
+    );
+
+    // Decrypt the data
+    const decryptedBuffer = await window.crypto.subtle.decrypt(
+      { name: "AES-CBC", iv: ivBuffer },
+      importedKey,
+      encryptedBuffer
+    );
+
+    // Convert the decrypted buffer to a string
+    const decoder = new TextDecoder();
+    return decoder.decode(decryptedBuffer);
+  } catch (error) {
+    console.error("Decryption failed:", error);
+    return ""; // Return an empty string or handle the error as needed
+  }
+}
 
 export function AiLensDashboard() {
     const [lenses, setLenses] = useState<Lens[]>([]);
@@ -81,63 +114,76 @@ export function AiLensDashboard() {
     const [editingAproxTimeId, setEditingAproxTimeId] = useState<number | null>(null);
 
     const [isEditNegativePromptModalOpen, setIsEditNegativePromptModalOpen] = useState(false);
-  const [editingLensId, setEditingLensId] = useState<string | null>(null); 
-  const decrypt = useDecryption();
+    const [editingLensId, setEditingLensId] = useState<string | null>(null); 
+    
+    const { decryptField, isDecrypting } = useDecryption();
   
-  const fetchLensData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('https://dashboard.flashailens.com/api/dashboard/getAllData');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    useEffect(() => {
+      fetchLensData();
+    }, []);
+  
+    const fetchLensData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch('https://dashboard.flashailens.com/api/dashboard/getAllData');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+    
+        if (!result.data || !Array.isArray(result.data)) {
+          console.error('API response is not in the expected format:', result);
+          throw new Error('API response is not in the expected format');
+        }
+    
+        const formattedLenses: Lens[] = await Promise.all(result.data.map(async (item: any) => {
+          const decryptIfNeeded = async (value: any) => {
+            if (typeof value === 'string' && value.startsWith('{')) {
+              try {
+                return await decryptField(value);
+              } catch (error) {
+                console.error(`Failed to decrypt field:`, error);
+                return value; // Return the original value if decryption fails
+              }
+            }
+            return value;
+          };
+    
+          return {
+            id: item._id || '',
+            lensId: item.lensId || '',
+            name: await decryptIfNeeded(item.lensName) || '',
+            display: item.display || false,
+            premiumLens: item.premiumLens || false,
+            creditconsumption: parseInt(await decryptIfNeeded(item.lensCredit)) || 0,
+            promptgenerationflow: await decryptIfNeeded(item.promptFlow) || '',
+            imageToTextModel: await decryptIfNeeded(item.model) || '',
+            maxTokens: parseInt(await decryptIfNeeded(item.maxTokens)) || 0,
+            textToImageModel: await decryptIfNeeded(item.imageModel) || '',
+            lastUpdate: new Date(item.updatedAt || Date.now()),
+            prompt: await decryptIfNeeded(item.prompt) || '',
+            stylePrompt: await decryptIfNeeded(item.stylePrompt) || '',
+            negativePrompt: await decryptIfNeeded(item.negativePrompt) || '',
+            Aproxtime: await decryptIfNeeded(item.approxTime) || '',
+            steps: parseInt(await decryptIfNeeded(item.civitaiSteps)) || 0,
+            cfgScale: parseFloat(await decryptIfNeeded(item.civitaiCFGScale)) || 0,
+            image: item.image || null,
+            usageCount: parseInt(await decryptIfNeeded(item.lensUses)) || 0
+          };
+        }));
+    
+        setLenses(formattedLenses);
+      } catch (error) {
+        console.error('Error fetching lens data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch lens data. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
-      const result = await response.json();
-
-      if (!result.data || !Array.isArray(result.data)) {
-        console.error('API response is not in the expected format:', result);
-        throw new Error('API response is not in the expected format');
-      }
-
-      const formattedLenses: Lens[] = await Promise.all(result.data.map(async (item: any) => ({
-        id: item._id || '',
-        lensId: item.lensId || '',
-        name: await decrypt(item.lensName) || '',
-        display: item.display || false,
-        premiumLens: item.premiumLens || false,
-        creditconsumption: parseInt(await decrypt(item.lensCredit)) || 0,
-        promptgenerationflow: await decrypt(item.promptFlow) || '',
-        imageToTextModel: await decrypt(item.model) || '',
-        maxTokens: parseInt(await decrypt(item.maxTokens)) || 0,
-        textToImageModel: await decrypt(item.imageModel) || '',
-        lastUpdate: new Date(item.updatedAt || Date.now()),
-        prompt: await decrypt(item.prompt) || '',
-        stylePrompt: await decrypt(item.stylePrompt) || '',
-        negativePrompt: await decrypt(item.negativePrompt) || '',
-        Aproxtime: await decrypt(item.approxTime) || '',
-        steps: parseInt(await decrypt(item.civitaiSteps)) || 0,
-        cfgScale: parseFloat(await decrypt(item.civitaiCFGScale)) || 0,
-        image: item.image || null,
-        usageCount: parseInt(await decrypt(item.lensUses)) || 0
-      })));
-
-      setLenses(formattedLenses);
-      console.log(formattedLenses);
-      
-    } catch (error) {
-      console.error('Error fetching lens data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch lens data. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [decrypt]);
-
-  useEffect(() => {
-    fetchLensData();
-  }, [fetchLensData]);
+    };
   
     // Add new handler functions for Aprox Time editing
     const handleAproxTimeEdit = (id: number) => {

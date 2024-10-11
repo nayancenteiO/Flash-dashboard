@@ -1,57 +1,46 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
-type DecryptFunction = (encryptedData: string) => Promise<string>;
+export function useDecryption() {
+  debugger;
+  const [isDecrypting, setIsDecrypting] = useState(false);
 
-async function decryptField(encryptedData: string): Promise<string> {
-  
-  if (typeof window === 'undefined') {
-    return encryptedData;
-  }
+  const decryptField = useCallback(async (encryptedData: string): Promise<string> => {
+    debugger;
+    setIsDecrypting(true);
+    try {
+      const { key, iv, encryptedData: encData } = JSON.parse(encryptedData);
 
-  try {
-    const { key, iv, encryptedData: encData } = JSON.parse(encryptedData);
+      // Convert hex strings to Uint8Array
+      const keyBuffer = new Uint8Array(key.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
+      const ivBuffer = new Uint8Array(iv.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
+      const encryptedBuffer = new Uint8Array(encData.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
 
-    const keyBuffer = new Uint8Array(key.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
-    const ivBuffer = new Uint8Array(iv.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
-    const encryptedBuffer = new Uint8Array(encData.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
+      // Import the key
+      const importedKey = await window.crypto.subtle.importKey(
+        "raw",
+        keyBuffer,
+        { name: "AES-CBC" },
+        false,
+        ["decrypt"]
+      );
 
-    const crypto = window.crypto || (window as any).msCrypto;
-    
-    if (!crypto || !crypto.subtle) {
-      console.warn('Web Crypto API is not available. Returning encrypted data.');
-      return encryptedData;
-    }
+      // Decrypt the data
+      const decryptedBuffer = await window.crypto.subtle.decrypt(
+        { name: "AES-CBC", iv: ivBuffer },
+        importedKey,
+        encryptedBuffer
+      );
 
-    const importedKey = await crypto.subtle.importKey(
-      "raw",
-      keyBuffer,
-      { name: "AES-CBC" },
-      false,
-      ["decrypt"]
-    );
-
-    const decryptedBuffer = await crypto.subtle.decrypt(
-      { name: "AES-CBC", iv: ivBuffer },
-      importedKey,
-      encryptedBuffer
-    );
-
-    const decoder = new TextDecoder();
-    return decoder.decode(decryptedBuffer);
-  } catch (error) {
-    console.error("Decryption failed:", error);
-    return encryptedData;
-  }
-}
-
-export function useDecryption(): DecryptFunction {
-  const [decrypt, setDecrypt] = useState<DecryptFunction>(() => (data: string) => Promise.resolve(data));
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setDecrypt(() => decryptField);
+      // Convert the decrypted buffer to a string
+      const decoder = new TextDecoder();
+      return decoder.decode(decryptedBuffer);
+    } catch (error) {
+      console.error("Decryption failed:", error);
+      throw error; // Rethrow the error to be handled by the caller
+    } finally {
+      setIsDecrypting(false);
     }
   }, []);
 
-  return decrypt;
+  return { decryptField, isDecrypting };
 }
