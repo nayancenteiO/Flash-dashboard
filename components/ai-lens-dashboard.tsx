@@ -1,198 +1,201 @@
-'use client'
+  'use client'
 
-import { useState, useRef, useEffect, useCallback, useMemo  } from 'react'
-import { Camera, Loader2, Copy, Trash2, MoveUp, MoveDown, LogIn, Menu, Upload, Plus, Search, Pencil } from 'lucide-react'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Slider } from "@/components/ui/slider"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter} from "@/components/ui/dialog"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Textarea } from "@/components/ui/textarea"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Label } from "@/components/ui/label"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { toast } from "@/components/ui/use-toast"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import Header from './header'
-import { ModelDropdown } from './model-dropdown'
-import { log } from 'console'
-import { LensNameDialog } from './LensNameDialog'
-import { NumberFieldDialog } from './NumberFieldDialog'
-import { AproxTimeDialog } from './AproxTimeDialog'
-import EditNegativePromptModal from './EditNegativePromptModal'
-// Utility function for decryption
+  import { useState, useRef, useEffect, useCallback, useMemo  } from 'react'
+  import { Camera, Loader2, Copy, Trash2, MoveUp, MoveDown, LogIn, Menu, Upload, Plus, Search, Pencil } from 'lucide-react'
+  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+  import { Switch } from "@/components/ui/switch"
+  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+  import { Button } from "@/components/ui/button"
+  import { Input } from "@/components/ui/input"
+  import { Slider } from "@/components/ui/slider"
+  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter} from "@/components/ui/dialog"
+  import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+  import { Textarea } from "@/components/ui/textarea"
+  import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+  import { Label } from "@/components/ui/label"
+  import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+  import { toast } from "@/components/ui/use-toast"
+  import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+  import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+  import { Checkbox } from "@/components/ui/checkbox"
+  import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+  import Header from './header'
+  import { ModelDropdown } from './model-dropdown'
+  import { log } from 'console'
+  import { LensNameDialog } from './LensNameDialog'
+  import { NumberFieldDialog } from './NumberFieldDialog'
+  import { AproxTimeDialog } from './AproxTimeDialog'
+  import EditNegativePromptModal from './EditNegativePromptModal'
+  // Utility function for decryption
 
-// Utility function for decryption
-async function decryptText(encrypted: { iv: string, key: string, encryptedData: string }): Promise<string> {
-  const algorithm = { name: 'AES-CBC' }; // Set to AES-CBC, as per your original decryption code
-
-  const iv = new Uint8Array(encrypted.iv.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))); // Convert hex IV to Uint8Array
-  const key = await crypto.subtle.importKey(
-    'raw', 
-    new Uint8Array(encrypted.key.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))), 
-    algorithm, 
-    false, 
-    ['decrypt']
-  );
-
-  const encryptedData = new Uint8Array(encrypted.encryptedData.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))); // Convert hex data to Uint8Array
-
-  try {
-    const decryptedData = await crypto.subtle.decrypt(
-      { name: 'AES-CBC', iv: iv }, // Ensure AES-CBC is used for decryption
-      key,
-      encryptedData
-    );
-    
-    return new TextDecoder().decode(decryptedData); // Decode decrypted ArrayBuffer to string
-  } catch (error) {
-    console.error('Decryption failed:', error);
-    throw error;
-  }
-}
-
-
-async function decryptField(encryptedData: string): Promise<string> {
-  try {
-    // Parse the encrypted data (assuming it's in JSON format)
-    const encrypted = JSON.parse(encryptedData);
-
-    // Use the new `decryptText` function
-    const decryptedText = await decryptText({
-      iv: encrypted.iv,
-      key: encrypted.key,
-      encryptedData: encrypted.encryptedData
-    });
-
-    return decryptedText;
-  } catch (error) {
-    console.error("Decryption failed:", error);
-    return ""; // Return an empty string or handle the error as needed
-  }
-}
-
-
-type Lens = {
-  id: number;
-  lensId: string;
-  name: string;
-  display: boolean;
-  premiumLens: boolean;
-  creditconsumption: number;
-  promptgenerationflow: string;
-  imageToTextModel: string;
-  maxTokens: number;
-  textToImageModel: string;
-  lastUpdate: Date;
-  prompt: string;
-  stylePrompt: string;
-  negativePrompt: string;
-  Aproxtime: string;
-  steps: number;
-  cfgScale: number;
-  image: string | null;
-  usageCount: number;
-}; 
-
-
-
-export function AiLensDashboard() {
-    const [lenses, setLenses] = useState<Lens[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [systemPrompt, setSystemPrompt] = useState("");
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [entriesPerPage, setEntriesPerPage] = useState("All")
-    const [searchQuery, setSearchQuery] = useState("")
-    const [currentPage, setCurrentPage] = useState(1)
-    const [isScrolled, setIsScrolled] = useState(false)
-    const [formData, setFormData] = useState({
-      name: "",
-      email: "",
-      description: "",
-      category: "",
-      subscribe: false,
-      preference: "",
-      attachment: null as File | null
-    });
-    const [editingId, setEditingId] = useState<number | null>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const [editingAproxTimeId, setEditingAproxTimeId] = useState<number | null>(null);
-
-    const [isEditNegativePromptModalOpen, setIsEditNegativePromptModalOpen] = useState(false);
-  const [editingLensId, setEditingLensId] = useState<string | null>(null); 
+  // Utility function for decryption
+  async function decryptText(encrypted: { iv: string, key: string, encryptedData: string }): Promise<string> {
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+      const algorithm = { name: 'AES-CBC' }; // Adjust to AES-GCM if needed
   
-  useEffect(() => {
-    fetchLensData();
-  }, []);
-
-  const fetchLensData = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('https://dashboard.flashailens.com/api/dashboard/getAllData');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const iv = new Uint8Array(encrypted.iv.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))); // Convert hex IV to Uint8Array
+      const key = await window.crypto.subtle.importKey(
+        'raw',
+        new Uint8Array(encrypted.key.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))),
+        algorithm,
+        false,
+        ['decrypt']
+      );
+  
+      const encryptedData = new Uint8Array(encrypted.encryptedData.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))); // Convert hex data to Uint8Array
+  
+      try {
+        const decryptedData = await window.crypto.subtle.decrypt(
+          { name: 'AES-CBC', iv: iv }, // Ensure AES-CBC is used for decryption
+          key,
+          encryptedData
+        );
+  
+        return new TextDecoder().decode(decryptedData); // Decode decrypted ArrayBuffer to string
+      } catch (error) {
+        console.error('Decryption failed:', error);
+        throw error;
       }
-      const result = await response.json();
-
-      if (!result.data || !Array.isArray(result.data)) {
-        console.error('API response is not in the expected format:', result);
-        throw new Error('API response is not in the expected format');
-      }
-
-      const formattedLenses: Lens[] = await Promise.all(result.data.map(async (item: any) => {
-        const decryptIfNeeded = async (value: any) => {
-          if (typeof value === 'string' && value.startsWith('{')) {
-            return await decryptField(value);
-          }
-          return value;
-        };
-
-        return {
-          id: item._id || '',
-          lensId: item.lensId || '',
-          name: item.lensName || '',
-          display: item.display || false,
-          premiumLens: item.premiumLens || false,
-          creditconsumption: parseInt(item.lensCredit) || 0,
-          promptgenerationflow: item.promptFlow || '',
-          imageToTextModel: await decryptIfNeeded(item.model) || '',
-          maxTokens: parseInt(await decryptIfNeeded(item.maxTokens)) || 0,
-          textToImageModel: await decryptIfNeeded(item.imageModel) || '',
-          lastUpdate: new Date(item.updatedAt || Date.now()),
-          prompt: await decryptIfNeeded(item.prompt) || '',
-          stylePrompt: await decryptIfNeeded(item.stylePrompt) || '',
-          negativePrompt: await decryptIfNeeded(item.negativePrompt) || '',
-          Aproxtime: item.approxTime || '',
-          steps: parseInt(item.civitaiSteps) || 0,
-          cfgScale: parseFloat(item.civitaiCFGScale) || 0,
-          image: item.image || null,
-          usageCount: parseInt(item.lensUses) || 0
-        };
-      }));
-
-      setLenses(formattedLenses);
-      
-    } catch (error) {
-      console.error('Error fetching lens data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch lens data. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    } else {
+      throw new Error('Web Crypto API is not supported in this environment.');
     }
-  };
+  }
+  
+  // Example function for field decryption
+  async function decryptField(encryptedData: string): Promise<string> {
+    try {
+      const encrypted = JSON.parse(encryptedData);
+  
+      // Use the decryptText function for the actual decryption
+      const decryptedText = await decryptText({
+        iv: encrypted.iv,
+        key: encrypted.key,
+        encryptedData: encrypted.encryptedData
+      });
+  
+      return decryptedText;
+    } catch (error) {
+      console.error('Decryption failed:', error);
+      return ''; // Handle error appropriately
+    }
+  }
+
+
+  type Lens = {
+    id: number;
+    lensId: string;
+    name: string;
+    display: boolean;
+    premiumLens: boolean;
+    creditconsumption: number;
+    promptgenerationflow: string;
+    imageToTextModel: string;
+    maxTokens: number;
+    textToImageModel: string;
+    lastUpdate: Date;
+    prompt: string;
+    stylePrompt: string;
+    negativePrompt: string;
+    Aproxtime: string;
+    steps: number;
+    cfgScale: number;
+    image: string | null;
+    usageCount: number;
+  }; 
+
+
+
+  export function AiLensDashboard() {
+      const [lenses, setLenses] = useState<Lens[]>([]);
+      const [isLoading, setIsLoading] = useState(true);
+      const [systemPrompt, setSystemPrompt] = useState("");
+      const [isLoggedIn, setIsLoggedIn] = useState(false);
+      const [email, setEmail] = useState("");
+      const [password, setPassword] = useState("");
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [entriesPerPage, setEntriesPerPage] = useState("All")
+      const [searchQuery, setSearchQuery] = useState("")
+      const [currentPage, setCurrentPage] = useState(1)
+      const [isScrolled, setIsScrolled] = useState(false)
+      const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        description: "",
+        category: "",
+        subscribe: false,
+        preference: "",
+        attachment: null as File | null
+      });
+      const [editingId, setEditingId] = useState<number | null>(null);
+      const inputRef = useRef<HTMLInputElement>(null);
+      const [editingAproxTimeId, setEditingAproxTimeId] = useState<number | null>(null);
+
+      const [isEditNegativePromptModalOpen, setIsEditNegativePromptModalOpen] = useState(false);
+    const [editingLensId, setEditingLensId] = useState<string | null>(null); 
+    
+    useEffect(() => {
+      fetchLensData();
+    }, []);
+
+    const fetchLensData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch('https://dashboard.flashailens.com/api/dashboard/getAllData');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+
+        if (!result.data || !Array.isArray(result.data)) {
+          console.error('API response is not in the expected format:', result);
+          throw new Error('API response is not in the expected format');
+        }
+
+        const formattedLenses: Lens[] = await Promise.all(result.data.map(async (item: any) => {
+          const decryptIfNeeded = async (value: any) => {
+            if (typeof value === 'string' && value.startsWith('{')) {
+              return await decryptField(value);
+            }
+            return value;
+          };
+
+          return {
+            id: item._id || '',
+            lensId: item.lensId || '',
+            name: item.lensName || '',
+            display: item.display || false,
+            premiumLens: item.premiumLens || false,
+            creditconsumption: parseInt(item.lensCredit) || 0,
+            promptgenerationflow: item.promptFlow || '',
+            imageToTextModel: await decryptIfNeeded(item.model) || '',
+            maxTokens: parseInt(await decryptIfNeeded(item.maxTokens)) || 0,
+            textToImageModel: await decryptIfNeeded(item.imageModel) || '',
+            lastUpdate: new Date(item.updatedAt || Date.now()),
+            prompt: await decryptIfNeeded(item.prompt) || '',
+            stylePrompt: await decryptIfNeeded(item.stylePrompt) || '',
+            negativePrompt: await decryptIfNeeded(item.negativePrompt) || '',
+            Aproxtime: item.approxTime || '',
+            steps: parseInt(item.civitaiSteps) || 0,
+            cfgScale: parseFloat(item.civitaiCFGScale) || 0,
+            image: item.image || null,
+            usageCount: parseInt(item.lensUses) || 0
+          };
+        }));
+
+        setLenses(formattedLenses);
+        
+      } catch (error) {
+        console.error('Error fetching lens data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch lens data. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
   
     // Add new handler functions for Aprox Time editing
     const handleAproxTimeEdit = (id: number) => {
