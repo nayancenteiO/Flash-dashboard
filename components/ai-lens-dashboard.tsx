@@ -28,8 +28,6 @@ import { NumberFieldDialog } from './NumberFieldDialog'
 import { AproxTimeDialog } from './AproxTimeDialog'
 import EditNegativePromptModal from './EditNegativePromptModal'
 import CryptoJS from 'crypto-js';
-// Utility function for decryption
-
 
 type Lens = {
   id: number;
@@ -81,40 +79,11 @@ export function AiLensDashboard() {
   const [isEditNegativePromptModalOpen, setIsEditNegativePromptModalOpen] = useState(false);
   const [editingLensId, setEditingLensId] = useState<string | null>(null);
 
-
-  //   const decryptText = (keys:string,ivs:string,encryptedDatas:string) => {
-  //     console.log("---------fiest----",keys);
-
-  //     const key = CryptoJS.enc.Hex.parse(keys);
-  //     const iv = CryptoJS.enc.Hex.parse(ivs);
-  //     console.log("-----descryption key---",key);
-
-  //     const decrypted = CryptoJS.AES.decrypt(encryptedDatas, key, {
-  //         iv: iv,
-  //         mode: CryptoJS.mode.CBC,
-  //         padding: CryptoJS.pad.Pkcs7,
-  //     });
-  //     const value = decrypted.toString(CryptoJS.enc.Utf8);
-
-  //     console.log("--------value-------",value);
-
-
-  //     return decrypted.toString(CryptoJS.enc.Utf8);
-  // };
-
-
-
   const decryptText = (keys: string, ivs: string, encryptedDatas: string): string => {
     try {
-      console.log("Input - Key:", keys);
-      console.log("Input - IV:", ivs);
-      console.log("Input - Encrypted Data:", encryptedDatas);
 
       const key = CryptoJS.enc.Hex.parse(keys);
       const iv = CryptoJS.enc.Hex.parse(ivs);
-
-      console.log("Parsed Key:", key.toString());
-      console.log("Parsed IV:", iv.toString());
 
       const cipherParams = CryptoJS.lib.CipherParams.create({
         ciphertext: CryptoJS.enc.Hex.parse(encryptedDatas)
@@ -126,7 +95,6 @@ export function AiLensDashboard() {
         padding: CryptoJS.pad.Pkcs7
       });
 
-      console.log("------decrypted.toString(CryptoJS.enc.Utf8)-----", decrypted.toString(CryptoJS.enc.Utf8));
 
       return decrypted.toString(CryptoJS.enc.Utf8);
     } catch (error) {
@@ -146,22 +114,18 @@ export function AiLensDashboard() {
       const result = await response.json();
 
       if (!result.data || !Array.isArray(result.data)) {
-        console.error('API response is not in the expected format:', result);
         throw new Error('API response is not in the expected format');
       }
 
       const formattedLenses: Lens[] = await Promise.all(result.data.map(async (item: any) => {
-        // Decrypting fields if needed
         const decryptIfNeeded = (encryptedData: string) => {
           const data = JSON.parse(encryptedData)
-          console.log("----------data========", data);
 
           if (encryptedData) {
             return decryptText(data.key, data.iv, data.encryptedData);
           }
           return encryptedData;
         };
-        console.log("----item.key---", item.model);
 
         return {
           id: item._id || '',

@@ -69,11 +69,10 @@ export default function EditNegativePromptModal({
   }, [isOpen, fetchNegativeKeywords]);
 
   const handleAddKeyword = useCallback(() => {
-    setKeywords(prev => [...prev, { negativeKeyword: '', replaceNegativeKeywords: '', isDeleted: false, _id: Date.now().toString() }]);
+    setKeywords(prev => [...prev, { negativeKeyword: '', replaceNegativeKeywords: '', isDeleted: false, _id: '' }]);
   }, []);
 
   const handleRemoveKeyword = useCallback(async (index: number, keywordId: string) => {
-    debugger;
     setDeletingKeywords(prev => new Set(prev).add(keywordId));
     try {
       const response = await fetch(`https://dashboard.flashailens.com/api/dashboard/deleteNegativeReplaceKeywords/${keywordId}/${lensId}`, {
@@ -112,26 +111,49 @@ export default function EditNegativePromptModal({
     setKeywords(prev => prev.map((k, i) => i === index ? { ...k, [field]: value } : k));
   }, []);
 
-  // const handleSave = async () => {
-  //   setIsLoading(true);
-  //   try {
-  //     await onSave(lensId, keywords);
-  //     onClose();
-  //     toast({
-  //       title: "Success",
-  //       description: "Negative keywords updated successfully",
-  //     });
-  //   } catch (error) {
-  //     console.error('Error updating negative keywords:', error);
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to update negative keywords. Please try again.",
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      const requestBody = keywords.map(keyword => ({
+        _id: keyword._id,
+        modelId: keyword.negativeKeyword,
+        replaceModelId: keyword.replaceNegativeKeywords
+      }));
+
+      const response = await fetch(`https://dashboard.flashailens.com/api/dashboard/addNegativeReplaceKeywords/${lensId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          models : requestBody}),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update negative keywords');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        onClose();
+        toast({
+          title: "Success",
+          description: "Negative keywords updated successfully",
+        });
+      } else {
+        throw new Error(result.message || 'Failed to update negative keywords');
+      }
+    } catch (error) {
+      console.error('Error updating negative keywords:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update negative keywords. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -173,7 +195,7 @@ export default function EditNegativePromptModal({
           <Button variant="secondary" onClick={onClose}>
             Close
           </Button>
-          <Button  disabled={isLoading}>
+          <Button  disabled={isLoading} onClick={handleSave}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save"}
           </Button>
         </DialogFooter>
