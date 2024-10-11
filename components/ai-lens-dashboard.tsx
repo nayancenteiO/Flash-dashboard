@@ -134,11 +134,7 @@
       const [isEditNegativePromptModalOpen, setIsEditNegativePromptModalOpen] = useState(false);
     const [editingLensId, setEditingLensId] = useState<string | null>(null); 
     
-    useEffect(() => {
-      fetchLensData();
-    }, []);
-
-    const fetchLensData = async () => {
+    const fetchLensData = useCallback(async () => {
       setIsLoading(true);
       try {
         const response = await fetch('https://dashboard.flashailens.com/api/dashboard/getAllData');
@@ -146,12 +142,12 @@
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
-
+  
         if (!result.data || !Array.isArray(result.data)) {
           console.error('API response is not in the expected format:', result);
           throw new Error('API response is not in the expected format');
         }
-
+  
         const formattedLenses: Lens[] = await Promise.all(result.data.map(async (item: any) => {
           const decryptIfNeeded = async (value: any) => {
             if (typeof value === 'string' && value.startsWith('{')) {
@@ -159,7 +155,7 @@
             }
             return value;
           };
-
+  
           return {
             id: item._id || '',
             lensId: item.lensId || '',
@@ -182,9 +178,9 @@
             usageCount: parseInt(item.lensUses) || 0
           };
         }));
-
+  
         setLenses(formattedLenses);
-        
+  
       } catch (error) {
         console.error('Error fetching lens data:', error);
         toast({
@@ -195,7 +191,14 @@
       } finally {
         setIsLoading(false);
       }
-    };
+    }, []);
+  
+    // useEffect to fetch lens data and ensure the decryption happens only on client side
+    useEffect(() => {
+      if (typeof window !== 'undefined') {
+        fetchLensData();
+      }
+    }, [fetchLensData]);
   
     // Add new handler functions for Aprox Time editing
     const handleAproxTimeEdit = (id: number) => {
