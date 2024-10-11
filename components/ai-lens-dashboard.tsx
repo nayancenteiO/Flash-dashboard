@@ -27,31 +27,7 @@ import { LensNameDialog } from './LensNameDialog'
 import { NumberFieldDialog } from './NumberFieldDialog'
 import { AproxTimeDialog } from './AproxTimeDialog'
 import EditNegativePromptModal from './EditNegativePromptModal'
-import { useDecryption } from './decryption-utils';
 // Utility function for decryption
-
-
-type Lens = {
-  id: number;
-  lensId: string;
-  name: string;
-  display: boolean;
-  premiumLens: boolean;
-  creditconsumption: number;
-  promptgenerationflow: string;
-  imageToTextModel: string;
-  maxTokens: number;
-  textToImageModel: string;
-  lastUpdate: Date;
-  prompt: string;
-  stylePrompt: string;
-  negativePrompt: string;
-  Aproxtime: string;
-  steps: number;
-  cfgScale: number;
-  image: string | null;
-  usageCount: number;
-}; 
 
 // Utility function for decryption
 async function decryptField(encryptedData: string): Promise<string> {
@@ -88,6 +64,30 @@ async function decryptField(encryptedData: string): Promise<string> {
   }
 }
 
+type Lens = {
+  id: number;
+  lensId: string;
+  name: string;
+  display: boolean;
+  premiumLens: boolean;
+  creditconsumption: number;
+  promptgenerationflow: string;
+  imageToTextModel: string;
+  maxTokens: number;
+  textToImageModel: string;
+  lastUpdate: Date;
+  prompt: string;
+  stylePrompt: string;
+  negativePrompt: string;
+  Aproxtime: string;
+  steps: number;
+  cfgScale: number;
+  image: string | null;
+  usageCount: number;
+}; 
+
+
+
 export function AiLensDashboard() {
     const [lenses, setLenses] = useState<Lens[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -114,76 +114,70 @@ export function AiLensDashboard() {
     const [editingAproxTimeId, setEditingAproxTimeId] = useState<number | null>(null);
 
     const [isEditNegativePromptModalOpen, setIsEditNegativePromptModalOpen] = useState(false);
-    const [editingLensId, setEditingLensId] = useState<string | null>(null); 
-    
-    const { decryptField, isDecrypting } = useDecryption();
+  const [editingLensId, setEditingLensId] = useState<string | null>(null); 
   
-    useEffect(() => {
-      fetchLensData();
-    }, []);
-  
-    const fetchLensData = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch('https://dashboard.flashailens.com/api/dashboard/getAllData');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-    
-        if (!result.data || !Array.isArray(result.data)) {
-          console.error('API response is not in the expected format:', result);
-          throw new Error('API response is not in the expected format');
-        }
-    
-        const formattedLenses: Lens[] = await Promise.all(result.data.map(async (item: any) => {
-          const decryptIfNeeded = async (value: any) => {
-            if (typeof value === 'string' && value.startsWith('{')) {
-              try {
-                return await decryptField(value);
-              } catch (error) {
-                console.error(`Failed to decrypt field:`, error);
-                return value; // Return the original value if decryption fails
-              }
-            }
-            return value;
-          };
-    
-          return {
-            id: item._id || '',
-            lensId: item.lensId || '',
-            name: await decryptIfNeeded(item.lensName) || '',
-            display: item.display || false,
-            premiumLens: item.premiumLens || false,
-            creditconsumption: parseInt(await decryptIfNeeded(item.lensCredit)) || 0,
-            promptgenerationflow: await decryptIfNeeded(item.promptFlow) || '',
-            imageToTextModel: await decryptIfNeeded(item.model) || '',
-            maxTokens: parseInt(await decryptIfNeeded(item.maxTokens)) || 0,
-            textToImageModel: await decryptIfNeeded(item.imageModel) || '',
-            lastUpdate: new Date(item.updatedAt || Date.now()),
-            prompt: await decryptIfNeeded(item.prompt) || '',
-            stylePrompt: await decryptIfNeeded(item.stylePrompt) || '',
-            negativePrompt: await decryptIfNeeded(item.negativePrompt) || '',
-            Aproxtime: await decryptIfNeeded(item.approxTime) || '',
-            steps: parseInt(await decryptIfNeeded(item.civitaiSteps)) || 0,
-            cfgScale: parseFloat(await decryptIfNeeded(item.civitaiCFGScale)) || 0,
-            image: item.image || null,
-            usageCount: parseInt(await decryptIfNeeded(item.lensUses)) || 0
-          };
-        }));
-    
-        setLenses(formattedLenses);
-      } catch (error) {
-        console.error('Error fetching lens data:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch lens data. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+  useEffect(() => {
+    fetchLensData();
+  }, []);
+
+  const fetchLensData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('https://dashboard.flashailens.com/api/dashboard/getAllData');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
+      const result = await response.json();
+
+      if (!result.data || !Array.isArray(result.data)) {
+        console.error('API response is not in the expected format:', result);
+        throw new Error('API response is not in the expected format');
+      }
+
+      const formattedLenses: Lens[] = await Promise.all(result.data.map(async (item: any) => {
+        const decryptIfNeeded = async (value: any) => {
+          if (typeof value === 'string' && value.startsWith('{')) {
+            return await decryptField(value);
+          }
+          return value;
+        };
+
+        return {
+          id: item._id || '',
+          lensId: item.lensId || '',
+          name: item.lensName || '',
+          display: item.display || false,
+          premiumLens: item.premiumLens || false,
+          creditconsumption: parseInt(item.lensCredit) || 0,
+          promptgenerationflow: item.promptFlow || '',
+          imageToTextModel: await decryptIfNeeded(item.model) || '',
+          maxTokens: parseInt(await decryptIfNeeded(item.maxTokens)) || 0,
+          textToImageModel: await decryptIfNeeded(item.imageModel) || '',
+          lastUpdate: new Date(item.updatedAt || Date.now()),
+          prompt: await decryptIfNeeded(item.prompt) || '',
+          stylePrompt: await decryptIfNeeded(item.stylePrompt) || '',
+          negativePrompt: await decryptIfNeeded(item.negativePrompt) || '',
+          Aproxtime: item.approxTime || '',
+          steps: parseInt(item.civitaiSteps) || 0,
+          cfgScale: parseFloat(item.civitaiCFGScale) || 0,
+          image: item.image || null,
+          usageCount: parseInt(item.lensUses) || 0
+        };
+      }));
+
+      setLenses(formattedLenses);
+      
+    } catch (error) {
+      console.error('Error fetching lens data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch lens data. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
     // Add new handler functions for Aprox Time editing
     const handleAproxTimeEdit = (id: number) => {
