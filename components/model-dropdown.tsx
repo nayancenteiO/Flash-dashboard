@@ -374,6 +374,16 @@ const AddFreeSubscriptionUserModal: React.FC<AddFreeSubscriptionUserModalProps> 
   );
 };
 
+interface SocialFeedAlgorithm {
+  latestPost: number
+  highScorePost: number
+  likeScore: number
+  dislikeScore: number
+  commentScore: number
+  reGenScore: number
+  remixScore: number
+}
+
 export function ModelDropdown({ onSelect }: ModelDropdownProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentModal, setCurrentModal] = useState<string | null>(null)
@@ -406,6 +416,15 @@ export function ModelDropdown({ onSelect }: ModelDropdownProps) {
     options: []
   })
 
+  const [socialFeedAlgorithm, setSocialFeedAlgorithm] = useState<SocialFeedAlgorithm>({
+    latestPost: 70,
+    highScorePost: 30,
+    likeScore: 2,
+    dislikeScore: 1,
+    commentScore: 1,
+    reGenScore: 3,
+    remixScore: 1
+  })
 
   useEffect(() => {
     const fetchPromptData = async () => {
@@ -485,6 +504,16 @@ export function ModelDropdown({ onSelect }: ModelDropdownProps) {
       }
     }
 
+    const fetchSocialFeedAlgorithm = async () => {
+      try {
+        const response = await axios.get('https://dashboard.flashailens.com/api/dashboard/getSocialAlgorithmData')
+        setSocialFeedAlgorithm(response.data.data)
+      } catch (error) {
+        console.error('Error fetching social feed algorithm:', error)
+      }
+    }
+
+    fetchSocialFeedAlgorithm()
     fetchDislikeText();
     fetchCommentTitles();
     fetchPromptData();
@@ -502,6 +531,7 @@ export function ModelDropdown({ onSelect }: ModelDropdownProps) {
   }
 
   const options = [
+    "Mange Social Feed Algorithm",
     "Add Negative Keywords",
     "Add Comment Titles",
     "Add Dislike Text",
@@ -676,6 +706,20 @@ export function ModelDropdown({ onSelect }: ModelDropdownProps) {
           console.error("Error while updating testing values:", error);
         }
         break;
+
+        case "Mange Social Feed Algorithm":
+        try {
+          const response = await axios.post('https://dashboard.flashailens.com/api/dashboard/updateSocialAlgorithmData', socialFeedAlgorithm)
+          console.log(socialFeedAlgorithm);
+          if (response.status === 200) {
+            console.log("Social Feed Algorithm updated successfully")
+          } else {
+            console.error("Error updating Social Feed Algorithm:", response.data)
+          }
+        } catch (error) {
+          console.error("Error updating Social Feed Algorithm:", error)
+        }
+        break
     }
     onSelect(currentModal || "");
     setIsModalOpen(false);
@@ -710,6 +754,7 @@ export function ModelDropdown({ onSelect }: ModelDropdownProps) {
         console.error('Error deleting dislike text option:', error);
       }
     };
+
 
     return (
       <div className='grid gap-4'>
@@ -763,6 +808,84 @@ export function ModelDropdown({ onSelect }: ModelDropdownProps) {
       </div>
     )
   }
+
+  const SocialFeedAlgorithmModal = () => (
+    <div className="grid gap-4">
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Social Feed Ratio</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="latestPost">Latest Post</Label>
+            <Input
+              id="latestPost"
+              type="number"
+              value={socialFeedAlgorithm.latestPost}
+              onChange={(e) => setSocialFeedAlgorithm(prev => ({ ...prev, latestPost: parseInt(e.target.value) }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="highScorePost">High Score Post</Label>
+            <Input
+              id="highScorePost"
+              type="number"
+              value={socialFeedAlgorithm.highScorePost}
+              onChange={(e) => setSocialFeedAlgorithm(prev => ({ ...prev, highScorePost: parseInt(e.target.value) }))}
+            />
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Score For Post</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="likeScore">Like Score</Label>
+            <Input
+              id="likeScore"
+              type="number"
+              value={socialFeedAlgorithm.likeScore}
+              onChange={(e) => setSocialFeedAlgorithm(prev => ({ ...prev, likeScore: parseInt(e.target.value) }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="dislikeScore">Dislike Score</Label>
+            <Input
+              id="dislikeScore"
+              type="number"
+              value={socialFeedAlgorithm.dislikeScore}
+              onChange={(e) => setSocialFeedAlgorithm(prev => ({ ...prev, dislikeScore: parseInt(e.target.value) }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="commentScore">Comment Score</Label>
+            <Input
+              id="commentScore"
+              type="number"
+              value={socialFeedAlgorithm.commentScore}
+              onChange={(e) => setSocialFeedAlgorithm(prev => ({ ...prev, commentScore: parseInt(e.target.value) }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="reGenScore">ReGen Score</Label>
+            <Input
+              id="reGenScore"
+              type="number"
+              value={socialFeedAlgorithm.reGenScore}
+              onChange={(e) => setSocialFeedAlgorithm(prev => ({ ...prev, reGenScore: parseInt(e.target.value) }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="remixScore">Remix Score</Label>
+            <Input
+              id="remixScore"
+              type="number"
+              value={socialFeedAlgorithm.remixScore}
+              onChange={(e) => setSocialFeedAlgorithm(prev => ({ ...prev, remixScore: parseInt(e.target.value) }))}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 
   const handleTestingValueChange = (key: string, value: string) => {
     setTestingValues((prev) => ({ ...prev, [key]: value }));
@@ -848,6 +971,7 @@ export function ModelDropdown({ onSelect }: ModelDropdownProps) {
               />
             )}
             {currentModal === "Add Dislike Text" && <AddDislikeText />}
+            {currentModal === "Mange Social Feed Algorithm" && <SocialFeedAlgorithmModal />}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>

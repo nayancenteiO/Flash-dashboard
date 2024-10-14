@@ -1220,9 +1220,50 @@ export function AiLensDashboard() {
     setIsEditNegativePromptModalOpen(true);
   }, []);
 
-  const handleDeleteLens = (id: number) => {
-    console.log(id);
-    setLenses(lenses.filter(lens => lens.id !== id))
+  const handleDeleteLens = async (id: number) => {
+    try {
+      // Find the lens to get its _id
+      const lensToDelete = lenses.find(lens => lens.id === id)
+      console.log(lensToDelete);
+      
+      if (!lensToDelete) {
+        throw new Error('Lens not found')
+      }
+      const dtaba = {
+        id: lensToDelete.id
+      }
+      // Make the API call to delete the lens
+      const response = await fetch('https://dashboard.flashailens.com/api/dashboard/removeData', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dtaba)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete lens')
+      }
+
+      // If successful, update the local state
+      setLenses(prevLenses => prevLenses.filter(lens => lens.id !== id))
+
+      // Show success message
+      toast({
+        title: "Success",
+        description: "Lens deleted successfully",
+      })
+    } catch (error) {
+      console.error('Error deleting lens:', error)
+      
+      // Show error message
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete lens. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleMoveLens = (id: number, direction: 'up' | 'down') => {
