@@ -29,27 +29,55 @@ import { AproxTimeDialog } from './AproxTimeDialog'
 import EditNegativePromptModal from './EditNegativePromptModal'
 import CryptoJS from 'crypto-js';
 
+
 type Lens = {
-  id: number;
-  lensId: string;
-  name: string;
   display: boolean;
   premiumLens: boolean;
+  image: string | null;
+  textToImageModel: string;
+  isUpscale: boolean
+  leonardoModelId: string
+  maxTokens: number;
+  imageToTextModel: string;
+  name: string;
+  lensId: string;
+  id: number;
+  prompt: string;
+  lastPrompt: string
+  stylePrompt: string;
+  quality: string
+  systemPrompt: string
   creditconsumption: number;
   promptgenerationflow: string;
-  imageToTextModel: string;
-  maxTokens: number;
-  textToImageModel: string;
-  lastUpdate: Date;
-  prompt: string;
-  stylePrompt: string;
+  upscaleKey: string
   negativePrompt: string;
-  Aproxtime: string;
+  civitaiSampler: string
+  civitaiSeed: string
+  civitaiAspectRatio: string
+  civitaiLoraModel: string
   steps: number;
   cfgScale: number;
-  image: string | null;
+  ModelsLabLoraModel: string[]
+  embeddingModel: string[]
+  sampler: string
+  order: number
   usageCount: number;
-};
+  dislikeFeedbackCount: number
+  Aproxtime: string;
+  dislikeRate: string
+  negativeKeyReplace: {
+    negativeKeyword: string
+    replaceNegativeKeywords: string
+    isDeleted: boolean
+    _id: string
+  }[]
+  badgeText: string
+  badge: boolean
+  isDeleted: boolean
+  createdAt: string
+  __v: number
+  lastUpdate: Date;
+}
 
 export function AiLensDashboard() {
   const [lenses, setLenses] = useState<Lens[]>([]);
@@ -132,9 +160,11 @@ export function AiLensDashboard() {
           lensId: item.lensId || '',
           name: item.lensName || '',
           display: item.display || false,
+          badge: item.badge || false,
           premiumLens: item.premiumLens || false,
           creditconsumption: parseInt(item.lensCredit) || 0,
           promptgenerationflow: item.promptFlow || '',
+          quality: item.quality || '',
 
           // Decrypting the necessary fields
           imageToTextModel: decryptIfNeeded(item.model) || '',
@@ -182,7 +212,6 @@ export function AiLensDashboard() {
     handleLensInputChange(id, 'Aproxtime', newAproxTime);
     setEditingAproxTimeId(null);
   };
-
 
   useEffect(() => {
     if (editingId !== null && inputRef.current) {
@@ -359,91 +388,6 @@ export function AiLensDashboard() {
       setFormData(prev => ({ ...prev, attachment: e.target.files![0] }));
     }
   };
-
-  // const handleDisplayToggle = useCallback(async (id: number) => {
-  //   try {
-  //     const lens = lenses.find(l => l.id === id);
-  //     if (!lens) {
-  //       console.error('Lens not found');
-  //       return;
-  //     }
-
-  //     const newDisplayValue = !lens.display;
-  //     console.log(newDisplayValue);
-
-  //     const response = await fetch('https://dashboard.flashailens.com/api/dashboard/updateDisplayValue', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({
-  //         lensId: lens.lensId,
-  //         isDisplayed: newDisplayValue,
-  //         display: true
-  //       }),
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error('Failed to update display value');
-  //     }
-  //     toast({
-  //       title: "Success",
-  //       description: "Display value updated successfully",
-  //     });
-  //   } catch (error) {
-  //     console.error('Error updating display value:', error);
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to update display value. Please try again.",
-  //       variant: "destructive",
-  //     });
-  //   }
-  // }, [lenses, toast]);
-
-  // const handleDisplayToggles = useCallback(async (id: number) => {
-  //   try {
-  //     const lens = lenses.find(l => l.id === id);
-  //     if (!lens) {
-  //       console.error('Lens not found');
-  //       return;
-  //     }
-
-  //     const newPremiumValue = !lens.premiumLens;
-  //     console.log(newPremiumValue);
-  //     const response = await fetch('https://dashboard.flashailens.com/api/dashboard/updateDisplayValue', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({
-  //         lensId: lens.lensId,
-  //         isDisplayed: newPremiumValue,
-  //         display: false
-  //       }),
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error('Failed to update premium lens value');
-  //     }
-
-  //     // Update local state if API call was successful
-  //     setLenses(prevLenses => prevLenses.map(l => 
-  //       l.id === id ? { ...l, premiumLens: newPremiumValue } : l
-  //     ));
-
-  //     toast({
-  //       title: "Success",
-  //       description: "Premium lens value updated successfully",
-  //     });
-  //   } catch (error) {
-  //     console.error('Error updating premium lens value:', error);
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to update premium lens value. Please try again.",
-  //       variant: "destructive",
-  //     });
-  //   }
-  // }, [lenses, toast]);
 
   const handleDisplayToggle = useCallback((id: number) => {
     setLenses(prevLenses => prevLenses.map(lens =>
@@ -1066,42 +1010,223 @@ export function AiLensDashboard() {
     }
   };
 
-  const handleCopyLens = (id: number) => {
-    const lensToCopy = lenses.find(lens => lens.id === id)
-    if (lensToCopy) {
-      const newLens = {
-        ...lensToCopy,
-        id: Math.max(...lenses.map(l => l.id)) + 1,
-        name: `${lensToCopy.name} (Copy)`,
-        lastUpdate: new Date(),
-        usageCount: 0,
+  const handleCopyLens = useCallback(async (id: number) => {
+    setIsLoading(true)
+    debugger;
+    try {
+      const lensToCopy = lenses.find(lens => lens.id === id);
+      if (lensToCopy) {
+        const newLens: Lens = {
+          ...lensToCopy,
+          id: Math.floor(Math.random() * 1000000000),
+          name: `${lensToCopy.name} (Copy)`,
+          createdAt: new Date().toISOString(),
+          lastUpdate: new Date(),
+          usageCount: 0,
+        }
+        
+        const negativeKeywordsResponse = await fetch(`https://dashboard.flashailens.com/api/dashboard/getNegativeReplaceData/${lensToCopy.lensId}`);
+      if (!negativeKeywordsResponse.ok) {
+        throw new Error('Failed to fetch negative keywords');
       }
-      setLenses([...lenses, newLens])
+      const negativeKeywordsData = await negativeKeywordsResponse.json();
+
+      // Extract the negativeKeyReplace array from the response
+      const negativeKeywords = negativeKeywordsData.data?.negativeKeyReplace || [];
+
+        const dtaba = {
+          lensId:  String(lensToCopy.lensId),
+          // _id: lensToCopy.id,
+          lensName: String(lensToCopy.name),
+          // createdAt: new Date().toISOString(),
+          // updatedAt: new Date(),
+          display:  String(lensToCopy.display), 
+          premiumLens:  String(lensToCopy.premiumLens), 
+          image:  String(lensToCopy.image), 
+          imageModel:  String(lensToCopy.textToImageModel),
+          isUpscale: lensToCopy.isUpscale ?  String(lensToCopy.isUpscale) : '', 
+          leonardoModelId: lensToCopy.leonardoModelId ? String(lensToCopy.leonardoModelId) : '', 
+          maxTokens:  String(lensToCopy.maxTokens), 
+          model:  String(lensToCopy.imageToTextModel),
+          prompt:  String(lensToCopy.prompt), 
+          lastPrompt: lensToCopy.lastPrompt ? String(lensToCopy.lastPrompt) : '',
+          stylePrompt:  String(lensToCopy.stylePrompt), 
+          quality: lensToCopy.quality ? String(lensToCopy.quality) : '',
+          systemPrompt: lensToCopy.systemPrompt ?  String(lensToCopy.systemPrompt) :'',
+          lensCredit:  String(lensToCopy.creditconsumption), 
+          promptFlow:  String(lensToCopy.promptgenerationflow), 
+          upscaleKey: lensToCopy.upscaleKey ?  String(lensToCopy.upscaleKey) : '', 
+          negativePrompt:  String(lensToCopy.negativePrompt),
+          civitaiSampler: lensToCopy.civitaiSampler ? String(lensToCopy.civitaiSampler) : '', 
+          civitaiSeed: lensToCopy.civitaiSeed ? String(lensToCopy.civitaiSeed):'', 
+          civitaiAspectRatio: lensToCopy.civitaiAspectRatio ?  String(lensToCopy.civitaiAspectRatio) : '', 
+          civitaiLoraModel: lensToCopy.civitaiLoraModel ? String(lensToCopy.civitaiLoraModel) : '',
+          civitaiSteps: String(lensToCopy.steps), 
+          civitaiCFGScale: String(lensToCopy.cfgScale), 
+          ModelsLabLoraModel: [] , 
+          embeddingModel: [],
+          sampler: lensToCopy.sampler ?  String(lensToCopy.sampler) : '',
+          order:lensToCopy.order ? String(lensToCopy.order) : '', 
+          // lensUses: String(lensToCopy.usageCount),
+          // dislikeFeedbackCount: lensToCopy.dislikeFeedbackCount ? String(lensToCopy.dislikeFeedbackCount) : '', 
+          approxTime:String(lensToCopy.Aproxtime), 
+          // dislikeRate: lensToCopy.dislikeRate ? String(lensToCopy.dislikeRate) : '', 
+          negativeKeyReplace: [],
+          badgeText: lensToCopy.badgeText ? String(lensToCopy.badgeText) :'', 
+          badge: String(lensToCopy.badge), 
+          // isDeleted: false, 
+          // __v: 0, 
+          isProduction: false
+        }
+
+        const response = await fetch('https://dashboard.flashailens.com/api/dashboard', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify(dtaba)
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to copy lens')
+        }
+
+        // Update the local state
+        setLenses(prevLenses => [newLens, ...prevLenses])
+
+        toast({
+          title: "Success",
+          description: "Lens copied successfully",
+        })
+      }
+    } catch (error) {
+      console.error('Error copying lens:', error)
+      toast({
+        title: "Error",
+        description: "Failed to copy lens. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
-  }
+  }, [lenses])
+
+  const handleliveCopyLens = useCallback(async (id: number) => {
+    setIsLoading(true)
+    debugger;
+    try {
+      const lensToCopy = lenses.find(lens => lens.id === id);
+      if (lensToCopy) {
+        const newLens: Lens = {
+          ...lensToCopy,
+          id: Math.floor(Math.random() * 1000000000),
+          name: `${lensToCopy.name}`,
+          createdAt: new Date().toISOString(),
+          lastUpdate: new Date(),
+          usageCount: 0,
+        }
+        
+        const negativeKeywordsResponse = await fetch(`https://dashboard.flashailens.com/api/dashboard/getNegativeReplaceData/${lensToCopy.lensId}`);
+      if (!negativeKeywordsResponse.ok) {
+        throw new Error('Failed to fetch negative keywords');
+      }
+      const negativeKeywordsData = await negativeKeywordsResponse.json();
+
+      // Extract the negativeKeyReplace array from the response
+      const negativeKeywords = negativeKeywordsData.data?.negativeKeyReplace || [];
+
+        const dtaba = {
+          lensId:  String(lensToCopy.lensId),
+          // _id: lensToCopy.id,
+          lensName: String(lensToCopy.name),
+          // createdAt: new Date().toISOString(),
+          // updatedAt: new Date(),
+          display:  String(lensToCopy.display), 
+          premiumLens:  String(lensToCopy.premiumLens), 
+          image:  String(lensToCopy.image), 
+          imageModel:  String(lensToCopy.textToImageModel),
+          isUpscale: lensToCopy.isUpscale ?  String(lensToCopy.isUpscale) : '', 
+          leonardoModelId: lensToCopy.leonardoModelId ? String(lensToCopy.leonardoModelId) : '', 
+          maxTokens:  String(lensToCopy.maxTokens), 
+          model:  String(lensToCopy.imageToTextModel),
+          prompt:  String(lensToCopy.prompt), 
+          lastPrompt: lensToCopy.lastPrompt ? String(lensToCopy.lastPrompt) : '',
+          stylePrompt:  String(lensToCopy.stylePrompt), 
+          quality: lensToCopy.quality ? String(lensToCopy.quality) : '',
+          systemPrompt: lensToCopy.systemPrompt ?  String(lensToCopy.systemPrompt) :'',
+          lensCredit:  String(lensToCopy.creditconsumption), 
+          promptFlow:  String(lensToCopy.promptgenerationflow), 
+          upscaleKey: lensToCopy.upscaleKey ?  String(lensToCopy.upscaleKey) : '', 
+          negativePrompt:  String(lensToCopy.negativePrompt),
+          civitaiSampler: lensToCopy.civitaiSampler ? String(lensToCopy.civitaiSampler) : '', 
+          civitaiSeed: lensToCopy.civitaiSeed ? String(lensToCopy.civitaiSeed):'', 
+          civitaiAspectRatio: lensToCopy.civitaiAspectRatio ?  String(lensToCopy.civitaiAspectRatio) : '', 
+          civitaiLoraModel: lensToCopy.civitaiLoraModel ? String(lensToCopy.civitaiLoraModel) : '',
+          civitaiSteps: String(lensToCopy.steps), 
+          civitaiCFGScale: String(lensToCopy.cfgScale), 
+          ModelsLabLoraModel: [] , 
+          embeddingModel: [],
+          sampler: lensToCopy.sampler ?  String(lensToCopy.sampler) : '',
+          order:lensToCopy.order ? String(lensToCopy.order) : '', 
+          // dislikeFeedbackCount: lensToCopy.dislikeFeedbackCount ? String(lensToCopy.dislikeFeedbackCount) : '', 
+          approxTime:String(lensToCopy.Aproxtime), 
+          // dislikeRate: lensToCopy.dislikeRate ? String(lensToCopy.dislikeRate) : '', 
+          negativeKeyReplace: negativeKeywords.map((keyword: any) => ({
+            negativeKeyword: keyword.negativeKeyword,
+            replaceNegativeKeywords: keyword.replaceNegativeKeywords,
+          })),
+          badgeText: lensToCopy.badgeText ? String(lensToCopy.badgeText) :'', 
+          badge: String(lensToCopy.badge), 
+          // isDeleted: false, 
+          // __v: 0, 
+          isProduction: true
+        }
+        
+        const response = await fetch('https://flashailens.com/api/dashboard', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify(dtaba)
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to copy lens')
+        }
+
+        // Update the local state
+        setLenses(prevLenses => [newLens, ...prevLenses])
+
+        toast({
+          title: "Success",
+          description: "Lens copied successfully",
+        })
+      }
+    } catch (error) {
+      console.error('Error copying lens:', error)
+      toast({
+        title: "Error",
+        description: "Failed to copy lens. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [lenses])
+
 
   const handleEditNegative = useCallback((lensId: string) => {
     setEditingLensId(lensId);
     setIsEditNegativePromptModalOpen(true);
   }, []);
-  // Add this new function to handle saving the updated negative prompt
-  //  const handleSaveNegativePrompt = async (id: number, newNegativePrompt: string) => {
-  //   try {
-  //     await updatePrompt(id, 'negativePrompt', newNegativePrompt);
-  //     setLenses(lenses.map(lens => 
-  //       lens.id === id ? { ...lens, negativePrompt: newNegativePrompt } : lens
-  //     ));
-  //   } catch (error) {
-  //     console.error('Error updating negative prompt:', error);
-  //     throw error;
-  //   }
-  // };
 
   const handleDeleteLens = (id: number) => {
+    console.log(id);
     setLenses(lenses.filter(lens => lens.id !== id))
   }
 
   const handleMoveLens = (id: number, direction: 'up' | 'down') => {
+    setIsLoading(true);
     const index = lenses.findIndex(lens => lens.id === id)
     if (
       (direction === 'up' && index > 0) ||
@@ -1110,7 +1235,8 @@ export function AiLensDashboard() {
       const newLenses = [...lenses]
       const [removed] = newLenses.splice(index, 1)
       newLenses.splice(direction === 'up' ? index - 1 : index + 1, 0, removed)
-      setLenses(newLenses)
+      setLenses(newLenses);
+      setIsLoading(false);
     }
   }
 
@@ -1353,6 +1479,7 @@ export function AiLensDashboard() {
     handleLensInputChange: (id: number, field: keyof Lens, value: string | number) => void;
     handleNameEdit: (id: number) => void;
     handleCopyLens: (id: number) => void;
+    handleliveCopyLens: (id: number) => void;
     handleMoveLens: (id: number, direction: 'up' | 'down') => void;
     handleDeleteLens: (id: number) => void;
     handleNameSave: (id: number, newName: string) => Promise<void>;
@@ -1372,6 +1499,7 @@ export function AiLensDashboard() {
     handleDisplayToggles,
     handleLensInputChange,
     handleCopyLens,
+    handleliveCopyLens,
     handleMoveLens,
     handleDeleteLens,
     handleNameSave,
@@ -1607,6 +1735,10 @@ export function AiLensDashboard() {
             <Copy className="h-4 w-4 mr-2" />
             Copy
           </Button>
+          <Button variant="outline" size="sm" onClick={() => handleliveCopyLens(lens.id)}>
+            <Copy className="h-4 w-4 mr-2" />
+            Copy To Live
+          </Button>
           <DeleteConfirmation onConfirm={() => handleDeleteLens(lens.id)} />
           <Button variant="outline" size="sm" onClick={() => handleMoveLens(lens.id, 'up')} disabled={index === 0}>
             <MoveUp className="h-4 w-4 mr-2" />
@@ -1703,6 +1835,7 @@ export function AiLensDashboard() {
                     handleDisplayToggles={handleDisplayToggles}
                     handleLensInputChange={handleLensInputChange}
                     handleCopyLens={handleCopyLens}
+                    handleliveCopyLens={handleliveCopyLens}
                     handleMoveLens={handleMoveLens}
                     handleDeleteLens={handleDeleteLens}
                     handleNameEdit={handleNameEdit}
@@ -1916,6 +2049,9 @@ export function AiLensDashboard() {
                             </Button>
                             <Button variant="outline" size="icon" onClick={() => handleCopyLens(lens.id)}>
                               <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline"  onClick={() => handleliveCopyLens(lens.id)}>
+                              <Copy className="h-4 w-4 mr-1" /> To Live
                             </Button>
                             <DeleteConfirmation onConfirm={() => handleDeleteLens(lens.id)} />
                             <Button variant="outline" size="icon" onClick={() => handleMoveLens(lens.id, 'up')} disabled={index === 0}>

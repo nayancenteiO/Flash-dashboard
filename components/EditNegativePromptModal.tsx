@@ -157,7 +157,7 @@ export default function EditNegativePromptModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] md:max-w-[600px] lg:max-w-[800px] xl:max-w-[1000px] w-full">
+      <DialogContent className="login-popup  sm:max-w-[425px] md:max-w-[600px] lg:max-w-[800px] xl:max-w-[1000px] w-full">
         <DialogHeader>
           <DialogTitle>Add Negative & Replace Keywords</DialogTitle>
         </DialogHeader>
