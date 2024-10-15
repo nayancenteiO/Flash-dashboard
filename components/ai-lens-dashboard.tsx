@@ -108,6 +108,8 @@ export function AiLensDashboard() {
   const [isEditNegativePromptModalOpen, setIsEditNegativePromptModalOpen] = useState(false);
   const [editingLensId, setEditingLensId] = useState<string | null>(null);
 
+  const [movingLens, setMovingLens] = useState<number | null>(null);
+
   const decryptText = (keys: string, ivs: string, encryptedDatas: string): string => {
     try {
 
@@ -1338,20 +1340,68 @@ export function AiLensDashboard() {
     }
   }
 
-  const handleMoveLens = (id: number, direction: 'up' | 'down') => {
-    setIsLoading(true);
-    const index = lenses.findIndex(lens => lens.id === id)
+  const handleMoveLens = useCallback(async (id: number, direction: 'up' | 'down') => {
+    setMovingLens(id);
+    const index = lenses.findIndex(lens => lens.id === id);
+    console.log(index);
     if (
       (direction === 'up' && index > 0) ||
       (direction === 'down' && index < lenses.length - 1)
     ) {
-      const newLenses = [...lenses]
-      const [removed] = newLenses.splice(index, 1)
-      newLenses.splice(direction === 'up' ? index - 1 : index + 1, 0, removed)
-      setLenses(newLenses);
-      setIsLoading(false);
+      const newLenses = [...lenses];
+      const [removed] = newLenses.splice(index, 1);
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      newLenses.splice(newIndex, 0, removed);
+      // Update the order property for the moved lens and the one it swapped with
+      const movedLens = newLenses[newIndex];
+      const movedLenss = newLenses[newIndex];
+      const swappedLens = newLenses[direction === 'up' ? newIndex + 1 : newIndex - 1];
+      const swappedLenss = newLenses[direction === 'up' ? newIndex + 1 : newIndex - 1];
+      console.log(movedLens);
+      console.log(swappedLens);
+      movedLens.order = newIndex + 1;
+      movedLenss.order = newIndex;
+      swappedLens.order = index + 1;
+      swappedLenss.order = index;
+      // setLenses(newLenses);
+      try {
+        await updateLensOrder(movedLens.lensId, movedLenss.order);
+        await updateLensOrder(swappedLens.lensId, swappedLens.order);
+        toast({
+          title: "Success",
+          description: "Lens order updated successfully",
+        });
+        setLenses(newLenses);
+      } catch (error) {
+        console.error('Error updating lens order:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update lens order. Please try again.",
+          variant: "destructive",
+        });
+        // Revert the change if the API call fails
+        setLenses(lenses);
+      }
     }
-  }
+    setMovingLens(null);
+  }, [lenses, toast]);
+
+  const updateLensOrder = async (id: string, newOrder: number) => {
+    debugger;
+    const response = await fetch('https://dashboard.flashailens.com/api/dashboard/updateOrder', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ lensId: id, order: newOrder }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update lens order');
+    }
+
+    return await response.json();
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -2006,12 +2056,30 @@ export function AiLensDashboard() {
             Copy To Live
           </Button>
           <DeleteConfirmation onConfirm={() => handleDeleteLens(lens.id)} />
-          <Button variant="outline" size="sm" onClick={() => handleMoveLens(lens.id, 'up')} disabled={index === 0}>
-            <MoveUp className="h-4 w-4 mr-2" />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleMoveLens(lens.id, 'up')} 
+            disabled={index === 0 || movingLens !== null}
+          >
+            {movingLens === lens.id ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <MoveUp className="h-4 w-4 mr-2" />
+            )}
             Up
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleMoveLens(lens.id, 'down')} disabled={index === lenses.length - 1}>
-            <MoveDown className="h-4 w-4 mr-2" />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleMoveLens(lens.id, 'down')} 
+            disabled={index === lenses.length - 1 || movingLens !== null}
+          >
+            {movingLens === lens.id ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <MoveDown className="h-4 w-4 mr-2" />
+            )}
             Down
           </Button>
         </div>
@@ -2338,12 +2406,32 @@ export function AiLensDashboard() {
                               <Copy className="h-4 w-4 mr-1" /> To Live
                             </Button>
                             <DeleteConfirmation onConfirm={() => handleDeleteLens(lens.id)} />
-                            <Button variant="outline" size="icon" onClick={() => handleMoveLens(lens.id, 'up')} disabled={index === 0}>
-                              <MoveUp className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="icon" onClick={() => handleMoveLens(lens.id, 'down')} disabled={index === lenses.length - 1}>
-                              <MoveDown className="h-4 w-4" />
-                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="icon" 
+                                onClick={() => handleMoveLens(lens.id, 'up')} 
+                                disabled={index === 0 || movingLens !== null}
+                                aria-label="Move lens up"
+                              >
+                                {movingLens === lens.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <MoveUp className="h-4 w-4" />
+                                )}
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                onClick={() => handleMoveLens(lens.id, 'down')} 
+                                disabled={index === lenses.length - 1 || movingLens !== null}
+                                aria-label="Move lens down"
+                              >
+                                {movingLens === lens.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <MoveDown className="h-4 w-4" />
+                                )}
+                              </Button>
                           </div>
                         </TableCell>
                       </TableRow>
