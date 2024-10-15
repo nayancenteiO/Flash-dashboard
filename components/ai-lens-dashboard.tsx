@@ -1019,7 +1019,7 @@ export function AiLensDashboard() {
         const newLens: Lens = {
           ...lensToCopy,
           id: Math.floor(Math.random() * 1000000000),
-          name: `${lensToCopy.name} (Copy)`,
+          name: `${lensToCopy.name}`,
           createdAt: new Date().toISOString(),
           lastUpdate: new Date(),
           usageCount: 0,
@@ -1768,7 +1768,7 @@ export function AiLensDashboard() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-        <div className="flex justify-between mt-4">
+        <div className="flex justify-between mt-4 custom-flex-mobile">
           <Button variant="outline" size="icon" onClick={() => handleEditNegative(lens.lensId)}>
             N
           </Button>
@@ -1814,7 +1814,7 @@ export function AiLensDashboard() {
       )}
       {isLoggedIn && (
         <>
-          <div className="mb-6 custom-flex">
+          <div className="mb-6 custom-flex d-none">
             <Label htmlFor="systemPrompt" className="text-lg font-medium">System Prompt</Label>
             <Textarea
               id="systemPrompt"

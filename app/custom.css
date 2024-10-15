@@ -175,6 +175,14 @@ span.d-block {
     }
 }
 @media(max-width:650px){
+    .custom-flex-mobile {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+    }
     .mobile-flex-image {
         display: flex;
         flex-direction: row;
