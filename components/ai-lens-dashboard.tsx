@@ -27,6 +27,7 @@ import { LensNameDialog } from './LensNameDialog'
 import { NumberFieldDialog } from './NumberFieldDialog'
 import { AproxTimeDialog } from './AproxTimeDialog'
 import EditNegativePromptModal from './EditNegativePromptModal'
+import { TextFieldDialog } from './TextFieldDialog'
 import CryptoJS from 'crypto-js';
 
 
@@ -163,6 +164,7 @@ export function AiLensDashboard() {
           badge: item.badge || false,
           premiumLens: item.premiumLens || false,
           creditconsumption: parseInt(item.lensCredit) || 0,
+          badgeText: item.badgeText || '',
           promptgenerationflow: item.promptFlow || '',
           quality: item.quality || '',
 
@@ -405,7 +407,8 @@ export function AiLensDashboard() {
         body: JSON.stringify({
           lensId: lens.lensId,
           isDisplayed: !lens.display,
-          display: true
+          display: true,
+          isBadge: false
         }),
       }).then(response => {
         if (!response.ok) {
@@ -435,7 +438,8 @@ export function AiLensDashboard() {
         body: JSON.stringify({
           lensId: lens.lensId,
           isDisplayed: !lens.premiumLens,
-          display: false
+          display: false,
+          isBadge: false
         }),
       }).then(response => {
         if (!response.ok) {
@@ -448,6 +452,75 @@ export function AiLensDashboard() {
       });
     }
   }, [lenses]);
+
+  const handleBadgeToggle = useCallback((id: number) => {
+    setLenses(prevLenses => prevLenses.map(lens =>
+      lens.id === id ? { ...lens, badge: !lens.badge } : lens
+    ));
+
+    // Send API request in the background
+    const lens = lenses.find(l => l.id === id);
+    if (lens) {
+      fetch('https://dashboard.flashailens.com/api/dashboard/updateDisplayValue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          lensId: lens.lensId,
+          isDisplayed: !lens.badge,
+          display: false,
+          isBadge: true
+        }),
+      }).then(response => {
+        if (!response.ok) {
+          console.error('Failed to update badge value');
+          // Optionally, revert the change if the API call fails
+        }
+      }).catch(error => {
+        console.error('Error updating badge value:', error);
+        // Optionally, revert the change if the API call fails
+      });
+    }
+  }, [lenses]);
+
+  const handleBadgeTextSave = async (id: number, newValue: string) => {
+    try {
+      const lens = lenses.find(l => l.id === id);
+      if (!lens) {
+        console.error('Lens not found');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('badgeText', newValue);
+
+      const response = await fetch(`https://dashboard.flashailens.com/api/dashboard/updateData/${id}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update badge text');
+      }
+
+      setLenses(prevLenses => prevLenses.map(lens =>
+        lens.id === id ? { ...lens, badgeText: newValue } : lens
+      ));
+
+      toast({
+        title: "Success",
+        description: "Badge text updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating badge text:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update badge text. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleLensInputChange = async (id: number, field: keyof Lens, value: string | number) => {
     if (field === 'promptgenerationflow') {
@@ -1214,7 +1287,6 @@ export function AiLensDashboard() {
     }
   }, [lenses])
 
-
   const handleEditNegative = useCallback((lensId: string) => {
     setEditingLensId(lensId);
     setIsEditNegativePromptModalOpen(true);
@@ -1517,6 +1589,7 @@ export function AiLensDashboard() {
     index: number;
     handleDisplayToggle: (id: number) => void;
     handleDisplayToggles: (id: number) => void;
+    handleBadgeToggle: (id: number) => void;
     handleLensInputChange: (id: number, field: keyof Lens, value: string | number) => void;
     handleNameEdit: (id: number) => void;
     handleCopyLens: (id: number) => void;
@@ -1525,6 +1598,7 @@ export function AiLensDashboard() {
     handleDeleteLens: (id: number) => void;
     handleNameSave: (id: number, newName: string) => Promise<void>;
     handleCreditConsumptionSave: (id: number, newValue: number) => Promise<void>;
+    handleBadgeTextSave: (id: number, newValue: string) => Promise<void>;
     handleMaxTokensSave: (id: number, newValue: number) => Promise<void>;
     handleStepsSave: (id: number, newValue: number) => Promise<void>;
     handleCfgScaleSave: (id: number, newValue: number) => Promise<void>;
@@ -1538,6 +1612,7 @@ export function AiLensDashboard() {
     index,
     handleDisplayToggle,
     handleDisplayToggles,
+    handleBadgeToggle,
     handleLensInputChange,
     handleCopyLens,
     handleliveCopyLens,
@@ -1545,6 +1620,7 @@ export function AiLensDashboard() {
     handleDeleteLens,
     handleNameSave,
     handleCreditConsumptionSave,
+    handleBadgeTextSave,
     handleMaxTokensSave,
     handleStepsSave,
     handleCfgScaleSave,
@@ -1768,6 +1844,155 @@ export function AiLensDashboard() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="item-1">
+            <AccordionTrigger>Models and Tokens</AccordionTrigger>
+            <AccordionContent>
+              <div className="grid gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Credit Consumption</Label>
+                  <NumberFieldDialog
+                    fieldName="Credit Consumption"
+                    value={lens.creditconsumption}
+                    onSave={(newValue) => handleCreditConsumptionSave(lens.id, newValue)}
+                    min={0}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">  Prompt Generation Flow</Label>
+                  <Select
+                    value={lens.promptgenerationflow}
+                    onValueChange={(value) => handleLensInputChange(lens.id, 'promptgenerationflow', value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Flow B">Flow B</SelectItem>
+                      <SelectItem value="Flow C">Flow C</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Image to Text Model</Label>
+                  <Select
+                    value={lens.imageToTextModel}
+                    onValueChange={(value) => handleLensInputChange(lens.id, 'imageToTextModel', value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="claude-3-opus-20240229">claude-3-opus</SelectItem>
+                      <SelectItem value="claude-3-haiku-20240307">claude-3-haiku</SelectItem>
+                      <SelectItem value="claude-3-sonnet-20240229">claude-3-sonnet</SelectItem>
+                      <SelectItem value="claude-3-5-sonnet-20240620">claude-3-5-sonnet</SelectItem>
+                      <SelectItem value="gpt-4o">gpt-4o</SelectItem>
+                      <SelectItem value="gpt-4o-mini">gpt-4o-mini</SelectItem>
+                      <SelectItem value="gpt-4-turbo">gpt-4-turbo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Text to Image Model</Label>
+                  <Select
+                    value={lens.textToImageModel}
+                    onValueChange={(value) => handleLensInputChange(lens.id, 'textToImageModel', value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sd3">sd3</SelectItem>
+                      <SelectItem value="flux-pro(1.1)">flux-pro(1.1)</SelectItem>
+                      <SelectItem value="sd3-large-turbo">sd3-large-turbo</SelectItem>
+                      <SelectItem value="sd3-large">sd3-large</SelectItem>
+                      <SelectItem value="core">core</SelectItem>
+                      <SelectItem value="sdxl-1.0">sdxl-1.0</SelectItem>
+                      <SelectItem value="sd-1.6">sd-1.6</SelectItem>
+                      <SelectItem value="dall-e-3">dall-e-3</SelectItem>
+                      <SelectItem value="Dreamshaper XL">Dreamshaper XL</SelectItem>
+                      <SelectItem value="Anime model">Animagine XL</SelectItem>
+                      <SelectItem value="Juggernaut-XL">Juggernaut XL</SelectItem>
+                      <SelectItem value="flux-dev">flux-dev</SelectItem>
+                      <SelectItem value="flux-schnell">flux-schnell</SelectItem>
+                      <SelectItem value="flux-pro">flux-pro</SelectItem>
+                      <SelectItem value="flux-realism">flux-realism</SelectItem>
+                      <SelectItem value="face-Gen">face-Gen</SelectItem>
+                      <SelectItem value="replicate-flux-schnell">replicate-flux-schnell</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Max Tokens</Label>
+                  <NumberFieldDialog
+                    fieldName="Max Tokens"
+                    value={lens.maxTokens}
+                    onSave={(newValue) => handleMaxTokensSave(lens.id, newValue)}
+                    min={1}
+                  />
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="item-2">
+            <AccordionTrigger>Prompts</AccordionTrigger>
+            <AccordionContent>
+              <div className="grid gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Prompt</Label>
+                  <PromptPopover
+                    value={lens.prompt}
+                    onChange={(value) => handleLensInputChange(lens.id, 'prompt', value)}
+                    title="Edit Prompt"
+                    id={lens.id}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Style Prompt</Label>
+                  <PromptPopover
+                    value={lens.stylePrompt}
+                    onChange={(value) => handleLensInputChange(lens.id, 'stylePrompt', value)}
+                    title="Edit Style Prompt"
+                    id={lens.id}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Negative Prompt</Label>
+                  <PromptPopover
+                    value={lens.negativePrompt}
+                    onChange={(value) => handleLensInputChange(lens.id, 'negativePrompt', value)}
+                    title="Edit Negative Prompt"
+                    id={lens.id}
+                  />
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="item-3">
+            <AccordionTrigger>Badge Settings</AccordionTrigger>
+            <AccordionContent>
+              <div className="grid gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Badge </Label>
+                  <Switch
+                    checked={lens.badge}
+                    onCheckedChange={() => handleBadgeToggle(lens.id)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Badge Texts</Label>
+                  <TextFieldDialog
+                    fieldName="Badge Text"
+                    value={lens.badgeText}
+                    onSave={(newValue) => handleBadgeTextSave(lens.id, newValue)}
+                    maxLength={50}
+                  />
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
         <div className="flex justify-between mt-4 custom-flex-mobile">
           <Button variant="outline" size="icon" onClick={() => handleEditNegative(lens.lensId)}>
             N
@@ -1874,6 +2099,7 @@ export function AiLensDashboard() {
                     index={index}
                     handleDisplayToggle={handleDisplayToggle}
                     handleDisplayToggles={handleDisplayToggles}
+                    handleBadgeToggle={handleBadgeToggle}
                     handleLensInputChange={handleLensInputChange}
                     handleCopyLens={handleCopyLens}
                     handleliveCopyLens={handleliveCopyLens}
@@ -1882,6 +2108,7 @@ export function AiLensDashboard() {
                     handleNameEdit={handleNameEdit}
                     handleNameSave={handleNameSave}
                     handleCreditConsumptionSave={handleCreditConsumptionSave}
+                    handleBadgeTextSave={handleBadgeTextSave}
                     handleMaxTokensSave={handleMaxTokensSave}
                     handleStepsSave={handleStepsSave}
                     handleCfgScaleSave={handleCfgScaleSave}
@@ -1902,6 +2129,8 @@ export function AiLensDashboard() {
                       <TableHead>Display</TableHead>
                       <TableHead>Premium Lens</TableHead>
                       <TableHead>Credit Consumption</TableHead>
+                      <TableHead>Badge</TableHead>
+                      <TableHead>Badge Texts</TableHead>
                       <TableHead>Prompt Generation Flow</TableHead>
                       <TableHead>Image to Text Model</TableHead>
                       <TableHead>Max Tokens</TableHead>
@@ -1956,6 +2185,20 @@ export function AiLensDashboard() {
                             value={lens.creditconsumption}
                             onSave={(newValue) => handleCreditConsumptionSave(lens.id, newValue)}
                             min={0}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={lens.badge}
+                            onCheckedChange={() => handleBadgeToggle(lens.id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextFieldDialog
+                            fieldName="Badge Text"
+                            value={lens.badgeText}
+                            onSave={(newValue) => handleBadgeTextSave(lens.id, newValue)}
+                            maxLength={50}
                           />
                         </TableCell>
                         <TableCell>
