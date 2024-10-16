@@ -88,7 +88,7 @@ export function ScheduledPublishTimeCell({ lens, handleSchedulePublishTime }: Sc
         <Button
           variant={"outline"}
           className={cn(
-            "w-[280px] justify-start text-left font-normal",
+            "w-[250px] justify-start text-left font-normal",
             !selectedDate && "text-muted-foreground"
           )}
         >

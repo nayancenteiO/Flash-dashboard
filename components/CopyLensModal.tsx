@@ -106,7 +106,7 @@ export function CopyLensModal({ lens, isOpen, onClose, onCopy }: CopyLensModalPr
         <DialogHeader>
           <DialogTitle>Copy Lens: {lens.name}</DialogTitle>
         </DialogHeader>
-        <div className="mt-2 grid grid-cols-3 gap-4">
+        <div className="mt-2 grid grid-cols-3 gap-4 mobile-custom-d-flex">
           <div className="space-y-2">
             <Label htmlFor="name">Lens Name</Label>
               <Input

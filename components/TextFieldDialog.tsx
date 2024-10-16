@@ -40,7 +40,7 @@ export const TextFieldDialog: React.FC<TextFieldDialogProps> = ({ fieldName, val
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <span className="cursor-pointer mobile-100 d-block rounded-md w-[200px]" onClick={handleOpen}>
+        <span className="cursor-pointer mobile-100 d-block rounded-md w-[150px]" onClick={handleOpen}>
           {value || "Enter badge text"}
         </span>
       </DialogTrigger>

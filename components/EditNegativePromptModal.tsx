@@ -195,7 +195,7 @@ export default function EditNegativePromptModal({
           <Button variant="secondary" onClick={onClose}>
             Close
           </Button>
-          <Button  disabled={isLoading} onClick={handleSave}>
+          <Button className='mb-01' disabled={isLoading} onClick={handleSave}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save"}
           </Button>
         </DialogFooter>

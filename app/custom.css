@@ -161,7 +161,6 @@ span.d-block {
     }
     .ml-mo{
         margin-left: 10px;
-                width: 145px;
     }
     .mobile-flex-dowen {
         display: flex;
@@ -197,6 +196,17 @@ span.d-block {
     .mobile-flex-dowen .flex.items-center.space-x-2 {
         display: flex;
         justify-content: center;
+    }
+    .mobile-custom-d-flex {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 10px;
+    }
+    
+    .mobile-custom-d-flex .space-y-2 {
+        flex-basis: 100%;
     }
 }
 @media(max-width:480px){

@@ -144,8 +144,6 @@ export function AiLensDashboard() {
     }
   };
 
-
-  // Fetch the lens data from the API, and decrypt fields only on the client side
   const fetchLensData = async () => {
     setIsLoading(true);
     try {
@@ -214,12 +212,10 @@ export function AiLensDashboard() {
     }
   };
 
-  // useEffect to fetch lens data and ensure the decryption happens only on client side
   useEffect(() => {
     fetchLensData();
   }, []);
 
-  // Add new handler functions for Aprox Time editing
   const handleAproxTimeEdit = (id: number) => {
     setEditingAproxTimeId(id);
   };
@@ -1523,8 +1519,6 @@ export function AiLensDashboard() {
 
   const MemoizedScheduledPublishTimeCell = useMemo(() => React.memo(ScheduledPublishTimeCellWrapper), [ScheduledPublishTimeCellWrapper])  
 
-
-
   const handleImageUpload = async (id: number, file: File) => {
     const formData = new FormData();
     formData.append('image', file);
@@ -1693,7 +1687,7 @@ export function AiLensDashboard() {
             <AvatarFallback>{lens.name.charAt(0)}</AvatarFallback>
           </Avatar>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent className='login-popup'>
           <DialogHeader>
             <DialogTitle>Upload Image for {lens.name}</DialogTitle>
           </DialogHeader>
@@ -1777,7 +1771,7 @@ export function AiLensDashboard() {
               onSave={async (newName) => await handleNameSave(lens.id, newName)}
             />
           </span>
-          <div>
+          {/* <div>
             <Switch className="mr-2"
               checked={lens.display}
               onCheckedChange={() => handleDisplayToggle(lens.id)}
@@ -1786,7 +1780,7 @@ export function AiLensDashboard() {
               checked={lens.premiumLens}
               onCheckedChange={() => handleDisplayToggles(lens.id)}
             />
-          </div>
+          </div> */}
 
         </CardTitle>
       </CardHeader>
@@ -1799,7 +1793,45 @@ export function AiLensDashboard() {
             Usage: {lens.usageCount} times
           </div>
         </div>
+        
         <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="item-5">
+            <AccordionTrigger>Lens Display Condition</AccordionTrigger>
+            <AccordionContent>
+              <div className="grid gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Display </Label>
+                  <Select
+                    value={lens.display ? "true" : "false"} 
+                    onValueChange={(value) => handleDisplayToggle(lens.id)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Display" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">True</SelectItem>
+                      <SelectItem value="false">False</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Premium</Label>
+                  <Select
+                    value={lens.premiumLens ? "true" : "false"}
+                    onValueChange={(value) => handleDisplayToggles(lens.id)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Premium" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">True</SelectItem>
+                      <SelectItem value="false">False</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
           <AccordionItem value="item-1">
             <AccordionTrigger>Models and Tokens</AccordionTrigger>
             <AccordionContent>
@@ -1980,143 +2012,25 @@ export function AiLensDashboard() {
               </div>
             </AccordionContent>
           </AccordionItem>
-          
-        </Accordion>
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="item-1">
-            <AccordionTrigger>Models and Tokens</AccordionTrigger>
-            <AccordionContent>
-              <div className="grid gap-4">
-                <div>
-                  <Label className="text-sm font-medium">Credit Consumption</Label>
-                  <NumberFieldDialog
-                    fieldName="Credit Consumption"
-                    value={lens.creditconsumption}
-                    onSave={(newValue) => handleCreditConsumptionSave(lens.id, newValue)}
-                    min={0}
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">  Prompt Generation Flow</Label>
-                  <Select
-                    value={lens.promptgenerationflow}
-                    onValueChange={(value) => handleLensInputChange(lens.id, 'promptgenerationflow', value)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Flow B">Flow B</SelectItem>
-                      <SelectItem value="Flow C">Flow C</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Image to Text Model</Label>
-                  <Select
-                    value={lens.imageToTextModel}
-                    onValueChange={(value) => handleLensInputChange(lens.id, 'imageToTextModel', value)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="claude-3-opus-20240229">claude-3-opus</SelectItem>
-                      <SelectItem value="claude-3-haiku-20240307">claude-3-haiku</SelectItem>
-                      <SelectItem value="claude-3-sonnet-20240229">claude-3-sonnet</SelectItem>
-                      <SelectItem value="claude-3-5-sonnet-20240620">claude-3-5-sonnet</SelectItem>
-                      <SelectItem value="gpt-4o">gpt-4o</SelectItem>
-                      <SelectItem value="gpt-4o-mini">gpt-4o-mini</SelectItem>
-                      <SelectItem value="gpt-4-turbo">gpt-4-turbo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Text to Image Model</Label>
-                  <Select
-                    value={lens.textToImageModel}
-                    onValueChange={(value) => handleLensInputChange(lens.id, 'textToImageModel', value)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sd3">sd3</SelectItem>
-                      <SelectItem value="flux-pro(1.1)">flux-pro(1.1)</SelectItem>
-                      <SelectItem value="sd3-large-turbo">sd3-large-turbo</SelectItem>
-                      <SelectItem value="sd3-large">sd3-large</SelectItem>
-                      <SelectItem value="core">core</SelectItem>
-                      <SelectItem value="sdxl-1.0">sdxl-1.0</SelectItem>
-                      <SelectItem value="sd-1.6">sd-1.6</SelectItem>
-                      <SelectItem value="dall-e-3">dall-e-3</SelectItem>
-                      <SelectItem value="Dreamshaper XL">Dreamshaper XL</SelectItem>
-                      <SelectItem value="Anime model">Animagine XL</SelectItem>
-                      <SelectItem value="Juggernaut-XL">Juggernaut XL</SelectItem>
-                      <SelectItem value="flux-dev">flux-dev</SelectItem>
-                      <SelectItem value="flux-schnell">flux-schnell</SelectItem>
-                      <SelectItem value="flux-pro">flux-pro</SelectItem>
-                      <SelectItem value="flux-realism">flux-realism</SelectItem>
-                      <SelectItem value="face-Gen">face-Gen</SelectItem>
-                      <SelectItem value="replicate-flux-schnell">replicate-flux-schnell</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Max Tokens</Label>
-                  <NumberFieldDialog
-                    fieldName="Max Tokens"
-                    value={lens.maxTokens}
-                    onSave={(newValue) => handleMaxTokensSave(lens.id, newValue)}
-                    min={1}
-                  />
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem value="item-2">
-            <AccordionTrigger>Prompts</AccordionTrigger>
-            <AccordionContent>
-              <div className="grid gap-4">
-                <div>
-                  <Label className="text-sm font-medium">Prompt</Label>
-                  <PromptPopover
-                    value={lens.prompt}
-                    onChange={(value) => handleLensInputChange(lens.id, 'prompt', value)}
-                    title="Edit Prompt"
-                    id={lens.id}
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Style Prompt</Label>
-                  <PromptPopover
-                    value={lens.stylePrompt}
-                    onChange={(value) => handleLensInputChange(lens.id, 'stylePrompt', value)}
-                    title="Edit Style Prompt"
-                    id={lens.id}
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Negative Prompt</Label>
-                  <PromptPopover
-                    value={lens.negativePrompt}
-                    onChange={(value) => handleLensInputChange(lens.id, 'negativePrompt', value)}
-                    title="Edit Negative Prompt"
-                    id={lens.id}
-                  />
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem value="item-3">
+          <AccordionItem value="item-6">
             <AccordionTrigger>Badge Settings</AccordionTrigger>
             <AccordionContent>
               <div className="grid gap-4">
                 <div>
                   <Label className="text-sm font-medium">Badge </Label>
-                  <Switch
-                    checked={lens.badge}
-                    onCheckedChange={() => handleBadgeToggle(lens.id)}
-                  />
+                  <Select
+                    value={lens.badge ? "true" : "false"}
+                    onValueChange={(value) => handleBadgeToggle(lens.id)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Badge" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">True</SelectItem>
+                      <SelectItem value="false">False</SelectItem>
+                    </SelectContent>
+                  </Select>
+
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Badge Texts</Label>
@@ -2291,23 +2205,23 @@ export function AiLensDashboard() {
                       <TableHead>Lens Icon</TableHead>
                       <TableHead>Lens Name</TableHead>
                       <TableHead>Display</TableHead>
-                      <TableHead>Premium Lens</TableHead>
-                      <TableHead>Credit Consumption</TableHead>
+                      <TableHead>Premium</TableHead>
+                      <TableHead>Credit Use</TableHead>
                       <TableHead>Badge</TableHead>
-                      <TableHead>Badge Texts</TableHead>
-                      <TableHead>Prompt Generation Flow</TableHead>
-                      <TableHead>Image to Text Model</TableHead>
+                      <TableHead>Badge Text</TableHead>
+                      <TableHead>Prompt gen flow</TableHead>
+                      <TableHead>Image to Text</TableHead>
                       <TableHead>Max Tokens</TableHead>
-                      <TableHead>Text to Image Model</TableHead>
+                      <TableHead>Text to Image</TableHead>
                       <TableHead>Prompt</TableHead>
                       <TableHead>Style Prompt</TableHead>
                       <TableHead>Negative Prompt</TableHead>
+                      <TableHead>Scheduled Publish Time</TableHead>
                       <TableHead>Steps</TableHead>
                       <TableHead>CFG Scale</TableHead>
-                      <TableHead>Aprox Time</TableHead>
+                      <TableHead>Approx Time</TableHead>
                       <TableHead>Usage Count</TableHead>
                       <TableHead>Last Update</TableHead>
-                      <TableHead>Scheduled Publish Time</TableHead>
                       <TableHead>Actions / Negative Keyword</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -2371,7 +2285,7 @@ export function AiLensDashboard() {
                             value={lens.promptgenerationflow}
                             onValueChange={(value) => handleLensInputChange(lens.id, 'promptgenerationflow', value)}
                           >
-                            <SelectTrigger className="w-full w-[180px]">
+                            <SelectTrigger className="w-full w-[150px]">
                               <SelectValue placeholder="Select model" />
                             </SelectTrigger>
                             <SelectContent>
@@ -2462,6 +2376,9 @@ export function AiLensDashboard() {
                           />
                         </TableCell>
                         <TableCell>
+                          <MemoizedScheduledPublishTimeCell lens={lens} />
+                        </TableCell>
+                        <TableCell>
                           <NumberFieldDialog
                             fieldName="Steps"
                             value={lens.steps}
@@ -2491,9 +2408,6 @@ export function AiLensDashboard() {
                         </TableCell>
                         <TableCell>{lens.usageCount}</TableCell>
                         <TableCell>{lens.lastUpdate.toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <MemoizedScheduledPublishTimeCell lens={lens} />
-                        </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
                             <Button variant="outline" size="icon" onClick={() => handleEditNegative(lens.lensId)}>
