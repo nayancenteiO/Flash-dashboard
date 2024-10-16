@@ -98,7 +98,7 @@ export function CopyLensModal({ lens, isOpen, onClose, onCopy }: CopyLensModalPr
     if (isFluxModel) {
       setEditedLens(prev => ({ ...prev, negativePrompt: '' }))
     }
-  }, [editedLens.textToImageModel])
+  }, [editedLens.textToImageModel, isFluxModel])
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

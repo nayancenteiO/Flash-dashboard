@@ -34,6 +34,7 @@ import { AproxTimeDialog } from './AproxTimeDialog'
 import EditNegativePromptModal from './EditNegativePromptModal'
 import { TextFieldDialog } from './TextFieldDialog'
 import { CopyLensModal } from './CopyLensModal'
+import { ScheduledPublishTimeCell } from './scheduled-publish-time-cell'
 import CryptoJS from 'crypto-js';
 
 
@@ -89,16 +90,8 @@ type Lens = {
 
 
 export function AiLensDashboard() {
-  const [lenses, setLenses] = useState<Lens[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [systemPrompt, setSystemPrompt] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [entriesPerPage, setEntriesPerPage] = useState("All")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
@@ -113,14 +106,19 @@ export function AiLensDashboard() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [editingAproxTimeId, setEditingAproxTimeId] = useState<number | null>(null);
 
-  const [isEditNegativePromptModalOpen, setIsEditNegativePromptModalOpen] = useState(false);
-  const [editingLensId, setEditingLensId] = useState<string | null>(null);
-
-  const [movingLens, setMovingLens] = useState<number | null>(null);
+  const [lenses, setLenses] = useState<Lens[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [entriesPerPage, setEntriesPerPage] = useState("All")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [editingLensId, setEditingLensId] = useState<string | null>(null)
+  const [isEditNegativePromptModalOpen, setIsEditNegativePromptModalOpen] = useState(false)
+  const [movingLens, setMovingLens] = useState<number | null>(null)
   const [isCopyModalOpen, setIsCopyModalOpen] = useState(false)
   const [selectedLens, setSelectedLens] = useState<Lens | null>(null)
-
-  const [date, setDate] = useState<Date>()
   
   const decryptText = (keys: string, ivs: string, encryptedDatas: string): string => {
     try {
@@ -219,7 +217,7 @@ export function AiLensDashboard() {
   // useEffect to fetch lens data and ensure the decryption happens only on client side
   useEffect(() => {
     fetchLensData();
-  }, []);
+  }, [fetchLensData]);
 
   // Add new handler functions for Aprox Time editing
   const handleAproxTimeEdit = (id: number) => {
@@ -1519,175 +1517,12 @@ export function AiLensDashboard() {
     }
   }, [lenses]);
 
-  const ScheduledPublishTimeCell = useCallback(({ lens }: { lens: Lens }) => {
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-      lens.scheduledPublishTime ? new Date(lens.scheduledPublishTime) : undefined
-    );
-    const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
-    const [hour, setHour] = useState<string | undefined>(
-      selectedDate ? format(selectedDate, 'hh') : undefined
-    );
-    const [minute, setMinute] = useState<string | undefined>(
-      selectedDate ? format(selectedDate, 'mm') : undefined
-    );
-    const [ampm, setAmpm] = useState<string | undefined>(
-      selectedDate ? format(selectedDate, 'a') : undefined
-    );
-    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-
-    const handleDateSelect = (newDate: Date | undefined) => {
-      if (newDate) {
-        const currentDate = selectedDate || new Date()
-        newDate.setHours(currentDate.getHours())
-        newDate.setMinutes(currentDate.getMinutes())
-      }
-      setSelectedDate(newDate)
-    }
-
-    const handleTimeChange = (type: 'hour' | 'minute' | 'ampm', value: string) => {
-      if (!selectedDate) {
-        setSelectedDate(new Date())
-      }
-      
-      let newDate = new Date(selectedDate || new Date())
-      
-      if (type === 'hour') {
-        setHour(value)
-        let hourInt = parseInt(value)
-        if (ampm === 'PM' && hourInt !== 12) hourInt += 12
-        if (ampm === 'AM' && hourInt === 12) hourInt = 0
-        newDate.setHours(hourInt)
-      } else if (type === 'minute') {
-        setMinute(value)
-        newDate.setMinutes(parseInt(value))
-      } else if (type === 'ampm') {
-        setAmpm(value)
-        let hourInt = newDate.getHours()
-        if (value === 'PM' && hourInt < 12) hourInt += 12
-        if (value === 'AM' && hourInt >= 12) hourInt -= 12
-        newDate.setHours(hourInt)
-      }
-      
-      setSelectedDate(newDate)
-    }
-
-    const handleSaveDateTime = () => {
-      if (!selectedDate || !hour || !minute || !ampm) {
-        toast({
-          title: "Incomplete Selection",
-          description: "Please select all date and time values.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      handleSchedulePublishTime(lens.id, selectedDate)
-      setIsPopoverOpen(false)
-    }
-
-    return (
-      <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant={"outline"}
-            className={cn(
-              "w-[280px] justify-start text-left font-normal",
-              !selectedDate && "text-muted-foreground"
-            )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {selectedDate ? format(selectedDate, "PPP hh:mm a") : <span>Pick a date and time</span>}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleDateSelect}
-            initialFocus
-          />
-          <div className="p-3 border-t">
-            <div className="flex items-center justify-between">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setIsTimePickerOpen(!isTimePickerOpen)}
-              >
-                <Clock className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, 'hh:mm a') : 'Select time'}
-              </Button>
-            </div>
-            {isTimePickerOpen && (
-              <div className="flex justify-between mt-2">
-                <Select
-                  value={hour}
-                  onValueChange={(value) => handleTimeChange('hour', value)}
-                >
-                  <SelectTrigger className="w-[80px]">
-                    <SelectValue placeholder="Hour" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 12 }, (_, i) => (
-                      <SelectItem key={i} value={(i + 1).toString().padStart(2, '0')}>
-                        {(i + 1).toString().padStart(2, '0')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={minute}
-                  onValueChange={(value) => handleTimeChange('minute', value)}
-                >
-                  <SelectTrigger className="w-[80px]">
-                    <SelectValue placeholder="Minute" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 60 }, (_, i) => (
-                      <SelectItem key={i} value={i.toString().padStart(2, '0')}>
-                        {i.toString().padStart(2, '0')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={ampm}
-                  onValueChange={(value) => handleTimeChange('ampm', value)}
-                >
-                  <SelectTrigger className="w-[80px]">
-                    <SelectValue placeholder="AM/PM" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="AM">AM</SelectItem>
-                    <SelectItem value="PM">PM</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <Button className="mt-4 w-full" onClick={handleSaveDateTime}>
-              Save Date and Time
-            </Button>
-          </div>
-          <div className="flex justify-end gap-2 p-3 border-t">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSelectedDate(undefined)
-                setHour(undefined)
-                setMinute(undefined)
-                setAmpm(undefined)
-                handleSchedulePublishTime(lens.id, undefined)
-                setIsPopoverOpen(false)
-              }}
-            >
-              Clear
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-    )
+  const ScheduledPublishTimeCellWrapper = useCallback(({ lens }: { lens: Lens }) => {
+    return <ScheduledPublishTimeCell lens={lens} handleSchedulePublishTime={handleSchedulePublishTime} />
   }, [handleSchedulePublishTime])
 
-  const MemoizedScheduledPublishTimeCell = useMemo(() => React.memo(ScheduledPublishTimeCell), [ScheduledPublishTimeCell])
+  const MemoizedScheduledPublishTimeCell = useMemo(() => React.memo(ScheduledPublishTimeCellWrapper), [ScheduledPublishTimeCellWrapper])  
+
 
 
   const handleImageUpload = async (id: number, file: File) => {
