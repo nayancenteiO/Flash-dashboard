@@ -1468,8 +1468,8 @@ export function AiLensDashboard() {
       swappedLenss.order = index;
       // setLenses(newLenses);
       try {
-        await updateLensOrder(movedLens.lensId, movedLenss.order);
-        await updateLensOrder(swappedLens.lensId, swappedLens.order);
+        await updateLensOrder(movedLens.lensId, movedLenss.order);  
+        await updateLensOrder(swappedLens.lensId, swappedLenss.order);
         toast({
           title: "Success",
           description: "Lens order updated successfully",

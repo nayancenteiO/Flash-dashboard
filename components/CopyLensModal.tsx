@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -90,6 +90,15 @@ export function CopyLensModal({ lens, isOpen, onClose, onCopy }: CopyLensModalPr
     fileInputRef.current?.click()
   }
 
+  const isFluxModel = ['flux-dev', 'flux-schnell', 'flux-pro', 'flux-realism', 'flux-pro(1.1)'].includes(editedLens.textToImageModel)
+  const isDreamshaperXL = editedLens.textToImageModel === 'Dreamshaper XL'
+
+  useEffect(() => {
+    if (isFluxModel) {
+      setEditedLens(prev => ({ ...prev, negativePrompt: '' }))
+    }
+  }, [editedLens.textToImageModel])
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="login-popup  sm:max-w-[425px] md:max-w-[600px] lg:max-w-[800px] xl:max-w-[1000px] w-full max-h-[90vh] overflow-y-auto">
@@ -98,13 +107,12 @@ export function CopyLensModal({ lens, isOpen, onClose, onCopy }: CopyLensModalPr
         </DialogHeader>
         <div className="mt-2 grid grid-cols-3 gap-4">
           <div className="space-y-2">
-          
-          <Label htmlFor="name">Lens Name</Label>
-            <Input
-              id="name"
-              value={editedLens.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-            />
+            <Label htmlFor="name">Lens Name</Label>
+              <Input
+                id="name"
+                value={editedLens.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+              />
           </div>
           <div className="space-y-2">
             <Label htmlFor="lensImage">Lens Image</Label>
@@ -188,7 +196,6 @@ export function CopyLensModal({ lens, isOpen, onClose, onCopy }: CopyLensModalPr
               <SelectContent>
               <SelectContent>
                               <SelectItem value="sd3">sd3</SelectItem>
-                              <SelectItem value="flux-pro(1.1)">flux-pro(1.1)</SelectItem>
                               <SelectItem value="sd3-large-turbo">sd3-large-turbo</SelectItem>
                               <SelectItem value="sd3-large">sd3-large</SelectItem>
                               <SelectItem value="core">core</SelectItem>
@@ -201,6 +208,7 @@ export function CopyLensModal({ lens, isOpen, onClose, onCopy }: CopyLensModalPr
                               <SelectItem value="flux-dev">flux-dev</SelectItem>
                               <SelectItem value="flux-schnell">flux-schnell</SelectItem>
                               <SelectItem value="flux-pro">flux-pro</SelectItem>
+                              <SelectItem value="flux-pro(1.1)">flux-pro(1.1)</SelectItem>
                               <SelectItem value="flux-realism">flux-realism</SelectItem>
                               <SelectItem value="face-Gen">face-Gen</SelectItem>
                               <SelectItem value="replicate-flux-schnell">replicate-flux-schnell</SelectItem>
@@ -208,6 +216,99 @@ export function CopyLensModal({ lens, isOpen, onClose, onCopy }: CopyLensModalPr
               </SelectContent>
             </Select>
           </div>
+          {isFluxModel && (
+          <>
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="steps">Steps</Label>
+              <Input
+                id="steps"
+                type="number"
+                value={editedLens.steps}
+                onChange={(e) => handleInputChange('steps', parseInt(e.target.value))}
+              />
+            </div>
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="cfgScale">CFG Scale</Label>
+              <Input
+                id="cfgScale"
+                type="number"
+                value={editedLens.cfgScale}
+                onChange={(e) => handleInputChange('cfgScale', parseFloat(e.target.value))}
+              />
+            </div>
+          </>
+        )}
+
+        {isDreamshaperXL && (
+          <>
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="sampler">Sampler</Label>
+              <Select
+                value={editedLens.sampler}
+                onValueChange={(value) => handleInputChange('sampler', value)}
+              >
+                <SelectTrigger id="sampler">
+                  <SelectValue placeholder="Select sampler" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="euler_a">Euler Ancestral</SelectItem>
+                  <SelectItem value="euler">Euler</SelectItem>
+                  <SelectItem value="heun">Heun</SelectItem>
+                  <SelectItem value="dpm2">DPM2</SelectItem>
+                  <SelectItem value="dpm2_ancestral">DPM2 Ancestral</SelectItem>
+                  <SelectItem value="lms">LMS</SelectItem>
+                  <SelectItem value="dpm_fast">DPM Fast</SelectItem>
+                  <SelectItem value="dpm_adaptive">DPM Adaptive</SelectItem>
+                  <SelectItem value="dpmpp_2s_ancestral">DPM++ 2S Ancestral</SelectItem>
+                  <SelectItem value="dpmpp_sde">DPM++ SDE</SelectItem>
+                  <SelectItem value="dpmpp_2m">DPM++ 2M</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="loraModel">Lora Model</Label>
+              <Select
+                value={editedLens.civitaiLoraModel}
+                onValueChange={(value) => handleInputChange('civitaiLoraModel', value)}
+              >
+                <SelectTrigger id="loraModel">
+                  <SelectValue placeholder="Select Lora model" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="model1">Model 1</SelectItem>
+                  <SelectItem value="model2">Model 2</SelectItem>
+                  <SelectItem value="model3">Model 3</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="aspectRatio">Aspect Ratio</Label>
+              <Select
+                value={editedLens.civitaiAspectRatio}
+                onValueChange={(value) => handleInputChange('civitaiAspectRatio', value)}
+              >
+                <SelectTrigger id="aspectRatio">
+                  <SelectValue placeholder="Select aspect ratio" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1:1">1:1</SelectItem>
+                  <SelectItem value="4:3">4:3</SelectItem>
+                  <SelectItem value="16:9">16:9</SelectItem>
+                  <SelectItem value="9:16">9:16</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="seed">Seed</Label>
+              <Input
+                id="seed"
+                value={editedLens.civitaiSeed}
+                onChange={(e) => handleInputChange('civitaiSeed', e.target.value)}
+              />
+            </div>
+          </>
+        )}
+
           <div className="space-y-2">
             <Label htmlFor="maxTokens">Max Tokens</Label>
             <Input
@@ -310,15 +411,17 @@ export function CopyLensModal({ lens, isOpen, onClose, onCopy }: CopyLensModalPr
               rows={3}
             />
           </div>
-          <div className="space-y-2 mt-4">
-            <Label htmlFor="negativePrompt">Negative Prompt</Label>
-            <Textarea
-              id="negativePrompt"
-              value={editedLens.negativePrompt}
-              onChange={(e) => handleInputChange('negativePrompt', e.target.value)}
-              rows={3}
-            />
-          </div>
+          {!isFluxModel && (
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="negativePrompt">Negative Prompt</Label>
+              <Textarea
+                id="negativePrompt"
+                value={editedLens.negativePrompt}
+                onChange={(e) => handleInputChange('negativePrompt', e.target.value)}
+                rows={3}
+              />
+            </div>
+          )}
           <div className="space-y-2 mt-4">
             <Label htmlFor="lastPrompt">Last Prompt</Label>
             <Textarea
