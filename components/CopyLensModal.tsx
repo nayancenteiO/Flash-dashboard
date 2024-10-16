@@ -56,6 +56,7 @@ type Lens = {
   createdAt: string
   __v: number
   lastUpdate: Date
+  scheduledPublishTime: string | null;
 }
 
 interface CopyLensModalProps {

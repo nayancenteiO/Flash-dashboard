@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { Camera, Loader2, Copy, Trash2, MoveUp, MoveDown, LogIn, Menu, Upload, Plus, Search, Pencil } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useMemo } from 'react'
+import { Camera, Loader2, Copy, Trash2, MoveUp, MoveDown, LogIn, Menu, Upload, Plus, Search, Pencil, Clock } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -20,6 +21,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Calendar as CalendarIcon } from "lucide-react"
+import { isValid, parseISO, format } from 'date-fns'
+import { cn } from "@/lib/utils"
+import { Calendar } from "@/components/ui/calendar"
 import Header from './header'
 import { ModelDropdown } from './model-dropdown'
 import { log } from 'console'
@@ -79,6 +84,7 @@ type Lens = {
   createdAt: string
   __v: number
   lastUpdate: Date;
+  scheduledPublishTime: string | null;
 }
 
 
@@ -114,6 +120,8 @@ export function AiLensDashboard() {
   const [isCopyModalOpen, setIsCopyModalOpen] = useState(false)
   const [selectedLens, setSelectedLens] = useState<Lens | null>(null)
 
+  const [date, setDate] = useState<Date>()
+  
   const decryptText = (keys: string, ivs: string, encryptedDatas: string): string => {
     try {
 
@@ -174,6 +182,7 @@ export function AiLensDashboard() {
           badgeText: item.badgeText || '',
           promptgenerationflow: item.promptFlow || '',
           quality: item.quality || '',
+          scheduledPublishTime: item.scheduleLensPublishTime,
 
           // Decrypting the necessary fields
           imageToTextModel: decryptIfNeeded(item.model) || '',
@@ -1090,107 +1099,6 @@ export function AiLensDashboard() {
     }
   };
 
-  // const handleCopyLens = useCallback(async (id: number) => {
-  //   setIsLoading(true)
-  //   debugger;
-  //   try {
-  //     const lensToCopy = lenses.find(lens => lens.id === id);
-  //     if (lensToCopy) {
-  //       const newLens: Lens = {
-  //         ...lensToCopy,
-  //         id: Math.floor(Math.random() * 1000000000),
-  //         name: `${lensToCopy.name}`,
-  //         createdAt: new Date().toISOString(),
-  //         lastUpdate: new Date(),
-  //         usageCount: 0,
-  //       }
-        
-  //       const negativeKeywordsResponse = await fetch(`https://dashboard.flashailens.com/api/dashboard/getNegativeReplaceData/${lensToCopy.lensId}`);
-  //     if (!negativeKeywordsResponse.ok) {
-  //       throw new Error('Failed to fetch negative keywords');
-  //     }
-  //     const negativeKeywordsData = await negativeKeywordsResponse.json();
-
-  //     // Extract the negativeKeyReplace array from the response
-  //     const negativeKeywords = negativeKeywordsData.data?.negativeKeyReplace || [];
-
-  //       const dtaba = {
-  //         lensId:  String(lensToCopy.lensId),
-  //         // _id: lensToCopy.id,
-  //         lensName: String(lensToCopy.name),
-  //         // createdAt: new Date().toISOString(),
-  //         // updatedAt: new Date(),
-  //         display:  String(lensToCopy.display), 
-  //         premiumLens:  String(lensToCopy.premiumLens), 
-  //         image:  String(lensToCopy.image), 
-  //         imageModel:  String(lensToCopy.textToImageModel),
-  //         isUpscale: lensToCopy.isUpscale ?  String(lensToCopy.isUpscale) : '', 
-  //         leonardoModelId: lensToCopy.leonardoModelId ? String(lensToCopy.leonardoModelId) : '', 
-  //         maxTokens:  String(lensToCopy.maxTokens), 
-  //         model:  String(lensToCopy.imageToTextModel),
-  //         prompt:  String(lensToCopy.prompt), 
-  //         lastPrompt: lensToCopy.lastPrompt ? String(lensToCopy.lastPrompt) : '',
-  //         stylePrompt:  String(lensToCopy.stylePrompt), 
-  //         quality: lensToCopy.quality ? String(lensToCopy.quality) : '',
-  //         systemPrompt: lensToCopy.systemPrompt ?  String(lensToCopy.systemPrompt) :'',
-  //         lensCredit:  String(lensToCopy.creditconsumption), 
-  //         promptFlow:  String(lensToCopy.promptgenerationflow), 
-  //         upscaleKey: lensToCopy.upscaleKey ?  String(lensToCopy.upscaleKey) : '', 
-  //         negativePrompt:  String(lensToCopy.negativePrompt),
-  //         civitaiSampler: lensToCopy.civitaiSampler ? String(lensToCopy.civitaiSampler) : '', 
-  //         civitaiSeed: lensToCopy.civitaiSeed ? String(lensToCopy.civitaiSeed):'', 
-  //         civitaiAspectRatio: lensToCopy.civitaiAspectRatio ?  String(lensToCopy.civitaiAspectRatio) : '', 
-  //         civitaiLoraModel: lensToCopy.civitaiLoraModel ? String(lensToCopy.civitaiLoraModel) : '',
-  //         civitaiSteps: String(lensToCopy.steps), 
-  //         civitaiCFGScale: String(lensToCopy.cfgScale), 
-  //         ModelsLabLoraModel: [] , 
-  //         embeddingModel: [],
-  //         sampler: lensToCopy.sampler ?  String(lensToCopy.sampler) : '',
-  //         order:lensToCopy.order ? String(lensToCopy.order) : '', 
-  //         // lensUses: String(lensToCopy.usageCount),
-  //         // dislikeFeedbackCount: lensToCopy.dislikeFeedbackCount ? String(lensToCopy.dislikeFeedbackCount) : '', 
-  //         approxTime:String(lensToCopy.Aproxtime), 
-  //         // dislikeRate: lensToCopy.dislikeRate ? String(lensToCopy.dislikeRate) : '', 
-  //         negativeKeyReplace: [],
-  //         badgeText: lensToCopy.badgeText ? String(lensToCopy.badgeText) :'', 
-  //         badge: String(lensToCopy.badge), 
-  //         // isDeleted: false, 
-  //         // __v: 0, 
-  //         isProduction: false
-  //       }
-
-  //       const response = await fetch('https://dashboard.flashailens.com/api/dashboard', {
-  //         method: 'POST',
-  //         headers: {
-  //           'Content-Type': 'application/json' 
-  //         },
-  //         body: JSON.stringify(dtaba)
-  //       })
-
-  //       if (!response.ok) {
-  //         throw new Error('Failed to copy lens')
-  //       }
-
-  //       // Update the local state
-  //       setLenses(prevLenses => [newLens, ...prevLenses])
-
-  //       toast({
-  //         title: "Success",
-  //         description: "Lens copied successfully",
-  //       })
-  //     }
-  //   } catch (error) {
-  //     console.error('Error copying lens:', error)
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to copy lens. Please try again.",
-  //       variant: "destructive",
-  //     })
-  //   } finally {
-  //     setIsLoading(false)
-  //   }
-  // }, [lenses])
-
   const handleCopyLens = useCallback((id: number) => {
     const lensToCopy = lenses.find(lens => lens.id === id)
     if (lensToCopy) {
@@ -1540,6 +1448,247 @@ export function AiLensDashboard() {
       description: "You have been successfully logged out.",
     });
   };
+
+ 
+  const handleSchedulePublishTime = useCallback(async (id: number, newDate: Date | undefined) => {
+    try {
+      const lens = lenses.find(l => l.id === id);
+      if (!lens) {
+        throw new Error('Lens not found');
+      }
+
+      if (newDate) {
+        const formattedDate = format(newDate, "yyyy-MM-dd")
+        const formattedTime = format(newDate, "hh:mm a")
+        
+        const response = await fetch('https://dashboard.flashailens.com/api/dashboard/updateScheduleTime', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            lensId: lens.lensId,
+            scheduleLensPublishTime: `${formattedDate} ${formattedTime}`,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update scheduled publish time');
+        }
+
+        setLenses(prevLenses => prevLenses.map(lens =>
+          lens.id === id ? { ...lens, scheduledPublishTime: newDate.toISOString() } : lens
+        ));
+
+        toast({
+          title: "Success",
+          description: "Scheduled publish time updated successfully",
+        });
+      } else {
+        const response = await fetch('https://dashboard.flashailens.com/api/dashboard/updateScheduleTime', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            lensId: lens.lensId,
+            scheduleLensPublishTime: null,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to clear scheduled publish time');
+        }
+
+        setLenses(prevLenses => prevLenses.map(lens =>
+          lens.id === id ? { ...lens, scheduledPublishTime: null } : lens
+        ));
+
+        toast({
+          title: "Success",
+          description: "Scheduled publish time cleared successfully",
+        });
+      }
+    } catch (error) {
+      console.error('Error updating scheduled publish time:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update scheduled publish time. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [lenses]);
+
+  const ScheduledPublishTimeCell = useCallback(({ lens }: { lens: Lens }) => {
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+      lens.scheduledPublishTime ? new Date(lens.scheduledPublishTime) : undefined
+    );
+    const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
+    const [hour, setHour] = useState<string | undefined>(
+      selectedDate ? format(selectedDate, 'hh') : undefined
+    );
+    const [minute, setMinute] = useState<string | undefined>(
+      selectedDate ? format(selectedDate, 'mm') : undefined
+    );
+    const [ampm, setAmpm] = useState<string | undefined>(
+      selectedDate ? format(selectedDate, 'a') : undefined
+    );
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+    const handleDateSelect = (newDate: Date | undefined) => {
+      if (newDate) {
+        const currentDate = selectedDate || new Date()
+        newDate.setHours(currentDate.getHours())
+        newDate.setMinutes(currentDate.getMinutes())
+      }
+      setSelectedDate(newDate)
+    }
+
+    const handleTimeChange = (type: 'hour' | 'minute' | 'ampm', value: string) => {
+      if (!selectedDate) {
+        setSelectedDate(new Date())
+      }
+      
+      let newDate = new Date(selectedDate || new Date())
+      
+      if (type === 'hour') {
+        setHour(value)
+        let hourInt = parseInt(value)
+        if (ampm === 'PM' && hourInt !== 12) hourInt += 12
+        if (ampm === 'AM' && hourInt === 12) hourInt = 0
+        newDate.setHours(hourInt)
+      } else if (type === 'minute') {
+        setMinute(value)
+        newDate.setMinutes(parseInt(value))
+      } else if (type === 'ampm') {
+        setAmpm(value)
+        let hourInt = newDate.getHours()
+        if (value === 'PM' && hourInt < 12) hourInt += 12
+        if (value === 'AM' && hourInt >= 12) hourInt -= 12
+        newDate.setHours(hourInt)
+      }
+      
+      setSelectedDate(newDate)
+    }
+
+    const handleSaveDateTime = () => {
+      if (!selectedDate || !hour || !minute || !ampm) {
+        toast({
+          title: "Incomplete Selection",
+          description: "Please select all date and time values.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      handleSchedulePublishTime(lens.id, selectedDate)
+      setIsPopoverOpen(false)
+    }
+
+    return (
+      <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant={"outline"}
+            className={cn(
+              "w-[280px] justify-start text-left font-normal",
+              !selectedDate && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {selectedDate ? format(selectedDate, "PPP hh:mm a") : <span>Pick a date and time</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleDateSelect}
+            initialFocus
+          />
+          <div className="p-3 border-t">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setIsTimePickerOpen(!isTimePickerOpen)}
+              >
+                <Clock className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, 'hh:mm a') : 'Select time'}
+              </Button>
+            </div>
+            {isTimePickerOpen && (
+              <div className="flex justify-between mt-2">
+                <Select
+                  value={hour}
+                  onValueChange={(value) => handleTimeChange('hour', value)}
+                >
+                  <SelectTrigger className="w-[80px]">
+                    <SelectValue placeholder="Hour" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <SelectItem key={i} value={(i + 1).toString().padStart(2, '0')}>
+                        {(i + 1).toString().padStart(2, '0')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={minute}
+                  onValueChange={(value) => handleTimeChange('minute', value)}
+                >
+                  <SelectTrigger className="w-[80px]">
+                    <SelectValue placeholder="Minute" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <SelectItem key={i} value={i.toString().padStart(2, '0')}>
+                        {i.toString().padStart(2, '0')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={ampm}
+                  onValueChange={(value) => handleTimeChange('ampm', value)}
+                >
+                  <SelectTrigger className="w-[80px]">
+                    <SelectValue placeholder="AM/PM" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AM">AM</SelectItem>
+                    <SelectItem value="PM">PM</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <Button className="mt-4 w-full" onClick={handleSaveDateTime}>
+              Save Date and Time
+            </Button>
+          </div>
+          <div className="flex justify-end gap-2 p-3 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedDate(undefined)
+                setHour(undefined)
+                setMinute(undefined)
+                setAmpm(undefined)
+                handleSchedulePublishTime(lens.id, undefined)
+                setIsPopoverOpen(false)
+              }}
+            >
+              Clear
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    )
+  }, [handleSchedulePublishTime])
+
+  const MemoizedScheduledPublishTimeCell = useMemo(() => React.memo(ScheduledPublishTimeCell), [ScheduledPublishTimeCell])
+
 
   const handleImageUpload = async (id: number, file: File) => {
     const formData = new FormData();
@@ -1996,6 +2145,7 @@ export function AiLensDashboard() {
               </div>
             </AccordionContent>
           </AccordionItem>
+          
         </Accordion>
         <Accordion type="single" collapsible className="w-full">
           <AccordionItem value="item-1">
@@ -2322,6 +2472,7 @@ export function AiLensDashboard() {
                       <TableHead>Aprox Time</TableHead>
                       <TableHead>Usage Count</TableHead>
                       <TableHead>Last Update</TableHead>
+                      <TableHead>Scheduled Publish Time</TableHead>
                       <TableHead>Actions / Negative Keyword</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -2505,6 +2656,9 @@ export function AiLensDashboard() {
                         </TableCell>
                         <TableCell>{lens.usageCount}</TableCell>
                         <TableCell>{lens.lastUpdate.toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <MemoizedScheduledPublishTimeCell lens={lens} />
+                        </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
                             <Button variant="outline" size="icon" onClick={() => handleEditNegative(lens.lensId)}>
