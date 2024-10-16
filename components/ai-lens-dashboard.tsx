@@ -217,7 +217,7 @@ export function AiLensDashboard() {
   // useEffect to fetch lens data and ensure the decryption happens only on client side
   useEffect(() => {
     fetchLensData();
-  }, [fetchLensData]);
+  }, []);
 
   // Add new handler functions for Aprox Time editing
   const handleAproxTimeEdit = (id: number) => {
